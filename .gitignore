@@ -32,3 +32,5 @@ skills-lock.json
 # is a product portfolio, not a contribution guide.
 docs/DECISION_LOG.md
 docs/ENGINEERING.md
+docs/ENGINEERING_DECISIONS.md
+docs/DECISIONS_FULL.md

@@ -4,11 +4,11 @@ The calls that shaped what this is — grouped by the question they answer.
 Each one names what would change it, because a decision you cannot argue with
 later is a preference wearing a decision's clothes.
 
-Numbering is continuous with [`ENGINEERING_DECISIONS.md`](ENGINEERING_DECISIONS.md),
-which holds the implementation calls. The full prose, including everything cut
-from here, is preserved in [`docs/DECISIONS_FULL.md`](DECISIONS_FULL.md) —
-a log that quietly edits its own history is worth less than one that shows where
-it was wrong.
+The numbers are not contiguous. The gaps are implementation decisions — CLI
+exit codes, SDK retry authority, serialization churn — kept out of this record
+because they are engineering, not product judgment. Nothing was renumbered to
+close them: the code references these by number, and tidying would break every
+one of those links.
 
 ---
 

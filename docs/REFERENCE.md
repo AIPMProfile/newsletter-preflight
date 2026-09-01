@@ -177,7 +177,6 @@ mail client, or the incoming mail has changed. Off by default.
 ## Development
 
 `PRODUCT_DECISIONS.md` — why the tool behaves the way it does.
-`ENGINEERING_DECISIONS.md` — the implementation calls behind it.
 
 ```bash
 pytest -q                     # full suite, ~5s, no network
