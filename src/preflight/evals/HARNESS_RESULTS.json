@@ -1,0 +1,171 @@
+{
+  "generated": "2026-08-30",
+  "documents": 6,
+  "note": "Sample size is whatever `real/` holds. It is never padded to a target, and no threshold is judged against an assumed N.",
+  "clearance_rate": 0.1667,
+  "clearance_target": 0.9,
+  "ready_rate": 0.16666666666666666,
+  "layout_safe_rate": 1.0,
+  "layout_target": 1.0,
+  "sources_normalised_by_parser": 3,
+  "documents_needing_repair": 6,
+  "repaired_of_those": 0.1667,
+  "passes": false,
+  "unsafe": [],
+  "uncleared": [
+    "https---css-tricks-com-newsletters-.html",
+    "https---mailchi-mp-.html",
+    "https---newsletter-pragmaticengineer-com-archive.html",
+    "https---tinyletter-com.html",
+    "https---www-smashingmagazine-com-the-smashing-newsletter-.html"
+  ],
+  "cases": [
+    {
+      "file": "https---css-tricks-com-newsletters-.html",
+      "verdict_before": "HOLD",
+      "verdict_after": "HOLD",
+      "blocking_before": 22,
+      "blocking_after": 1,
+      "cleared": false,
+      "ready": false,
+      "fixes_applied": 22,
+      "layout_safe": true,
+      "nothing_removed": true,
+      "structure_held": true,
+      "elements_added": 1,
+      "parser_normalised_source": true,
+      "liquid_safe": true,
+      "safe": true,
+      "codes_before": [
+        "img.missing_alt",
+        "link.bare_url",
+        "spam.link_ratio"
+      ],
+      "codes_remaining": [
+        "spam.link_ratio"
+      ]
+    },
+    {
+      "file": "https---mailchi-mp-.html",
+      "verdict_before": "HOLD",
+      "verdict_after": "HOLD",
+      "blocking_before": 12,
+      "blocking_after": 5,
+      "cleared": false,
+      "ready": false,
+      "fixes_applied": 7,
+      "layout_safe": true,
+      "nothing_removed": true,
+      "structure_held": true,
+      "elements_added": 0,
+      "parser_normalised_source": true,
+      "liquid_safe": true,
+      "safe": true,
+      "codes_before": [
+        "img.missing_alt",
+        "link.empty_href",
+        "spam.link_ratio"
+      ],
+      "codes_remaining": [
+        "link.empty_href",
+        "spam.link_ratio"
+      ]
+    },
+    {
+      "file": "https---newsletter-pragmaticengineer-com-archive.html",
+      "verdict_before": "HOLD",
+      "verdict_after": "HOLD",
+      "blocking_before": 15,
+      "blocking_after": 1,
+      "cleared": false,
+      "ready": false,
+      "fixes_applied": 13,
+      "layout_safe": true,
+      "nothing_removed": true,
+      "structure_held": true,
+      "elements_added": 0,
+      "parser_normalised_source": false,
+      "liquid_safe": true,
+      "safe": true,
+      "codes_before": [
+        "contrast.aa_fail",
+        "img.missing_alt",
+        "spam.link_ratio"
+      ],
+      "codes_remaining": [
+        "contrast.aaa_fail",
+        "spam.link_ratio"
+      ]
+    },
+    {
+      "file": "https---tinyletter-com.html",
+      "verdict_before": "HOLD",
+      "verdict_after": "HOLD",
+      "blocking_before": 15,
+      "blocking_after": 15,
+      "cleared": false,
+      "ready": false,
+      "fixes_applied": 3,
+      "layout_safe": true,
+      "nothing_removed": true,
+      "structure_held": true,
+      "elements_added": 0,
+      "parser_normalised_source": true,
+      "liquid_safe": true,
+      "safe": true,
+      "codes_before": [
+        "img.missing_alt",
+        "link.empty_href"
+      ],
+      "codes_remaining": [
+        "img.missing_alt",
+        "link.empty_href"
+      ]
+    },
+    {
+      "file": "https---world-hey-com-dhh.html",
+      "verdict_before": "HOLD",
+      "verdict_after": "READY",
+      "blocking_before": 1,
+      "blocking_after": 0,
+      "cleared": true,
+      "ready": true,
+      "fixes_applied": 1,
+      "layout_safe": true,
+      "nothing_removed": true,
+      "structure_held": true,
+      "elements_added": 0,
+      "parser_normalised_source": false,
+      "liquid_safe": true,
+      "safe": true,
+      "codes_before": [
+        "img.missing_alt"
+      ],
+      "codes_remaining": []
+    },
+    {
+      "file": "https---www-smashingmagazine-com-the-smashing-newsletter-.html",
+      "verdict_before": "HOLD",
+      "verdict_after": "HOLD",
+      "blocking_before": 2,
+      "blocking_after": 1,
+      "cleared": false,
+      "ready": false,
+      "fixes_applied": 1,
+      "layout_safe": true,
+      "nothing_removed": true,
+      "structure_held": true,
+      "elements_added": 0,
+      "parser_normalised_source": false,
+      "liquid_safe": true,
+      "safe": true,
+      "codes_before": [
+        "img.missing_alt",
+        "link.empty_href"
+      ],
+      "codes_remaining": [
+        "link.empty_href"
+      ]
+    }
+  ]
+}

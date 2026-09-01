@@ -1,0 +1,22 @@
+{
+  "provenance": "authored",
+  "cta_summary": "A low-contrast 'maybe check it out' link at the bottom, competing with two inline links above it.",
+  "findings": [
+    {
+      "code": "cta.weak_prominence",
+      "target": "cta-button",
+      "severity": "will_embarrass",
+      "message": "The primary action is 13px grey text with no visual isolation, sitting below two inline links that pull attention first.",
+      "remedy": "Make it a filled button and name the outcome: 'Read the launch write-up'.",
+      "quote": "maybe check it out"
+    },
+    {
+      "code": "copy.cognitive_friction",
+      "target": "document",
+      "severity": "could_be_better",
+      "message": "Three competing destinations (blog, changelog, launch notes) with no signal about which one matters.",
+      "remedy": "Pick the one link you want clicked and demote the others.",
+      "quote": ""
+    }
+  ]
+}

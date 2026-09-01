@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Publish Broadcast · Launch Check</title>
+<style>
+/* Wren's chrome, reproduced closely enough to judge the insertion honestly.
+   Building this beside their design rather than inside it would answer a
+   different question than the one being asked: does a pre-send check belong
+   here, and does it feel like it belongs. */
+:root{
+  --teal:#218b95;
+  --ink:#0d0d0d; --ink-2:#3f3f42; --muted:#71717a; --faint:#a1a1aa;
+  --line:#e4e4e7; --line-2:#d4d4d8; --surface:#fff; --bg:#fafafa; --sunken:#f4f4f5;
+  --wren-teal:#218b95;
+  --break:#b3261e; --break-bg:#fdecea; --break-line:#f3c9c4;
+  --embarrass:#8a6a15; --embarrass-bg:#fdf6e3; --embarrass-line:#eedeb8;
+  --polish:#3f6b8a; --polish-bg:#eef4f8; --polish-line:#cfe0ea;
+  --ok:#146c43; --ok-bg:#e8f4ee;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);
+     -webkit-font-smoothing:antialiased;}
+button{font-family:inherit;}
+
+/* ---- chrome ---- */
+.banner{display:flex;align-items:center;gap:10px;background:#fdf3d8;
+        border-bottom:1px solid #f2e3b8;padding:9px 18px;font-size:13.5px;}
+.banner .warn{color:#8a6a15;font-weight:700;}
+.banner .grow{flex:1;}
+.banner .pill{background:#f5c944;border:0;border-radius:7px;padding:7px 13px;
+              font:600 13px var(--sans);cursor:pointer;}
+.shell{display:flex;height:100vh;}
+.rail{width:56px;border-right:1px solid var(--line);background:var(--surface);
+      display:flex;flex-direction:column;align-items:center;gap:20px;padding:16px 0;}
+.rail .logo{font:800 20px var(--sans);letter-spacing:-.04em;}
+.rail i{width:20px;height:20px;border-radius:5px;background:var(--line-2);display:block;}
+.rail i.on{background:var(--ink);}
+.main{flex:1;display:flex;flex-direction:column;background:var(--surface);}
+.top{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line);}
+.top .back{border:0;background:transparent;font-size:17px;cursor:pointer;color:var(--ink-2);}
+.top h1{font:600 16.5px var(--sans);margin:0;}
+.top .grow{flex:1;}
+.top .state{display:flex;align-items:center;gap:7px;font:600 13.5px var(--sans);color:var(--ink-2);}
+.top .dot{width:9px;height:9px;border-radius:50%;background:var(--ink);display:inline-block;}
+.top .dot.off{background:var(--line-2);}
+.top .sep{color:var(--faint);}
+.body{flex:1;padding:34px 22px 110px;overflow:auto;}
+.card{max-width:660px;margin:0 auto;background:var(--surface);
+      border:1px solid var(--line);border-radius:var(--radius);padding:30px 32px 32px;}
+.card h2{font:600 22px var(--sans);text-align:center;margin:0 0 6px;}
+.card .sub{text-align:center;color:var(--muted);font-size:14px;margin:0 0 24px;}
+.opts{border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+.opt{display:flex;align-items:center;gap:14px;padding:17px 18px;}
+.opt + .opt{border-top:1px solid var(--line);}
+.opt .txt{flex:1;}
+.opt .txt b{font:600 15px var(--sans);display:block;}
+.opt .txt span{color:var(--muted);font-size:13px;}
+.box{width:19px;height:19px;border:1.5px solid var(--line-2);border-radius:5px;
+     cursor:pointer;flex:none;display:grid;place-items:center;background:var(--surface);}
+.box[aria-checked="true"]{background:var(--ink);border-color:var(--ink);}
+.box[aria-checked="true"]::after{content:'';width:5px;height:9px;border:solid #fff;
+     border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px);}
+
+/* ---- the check ---- */
+.check{max-width:1060px;margin:18px auto 0;border:1px solid var(--line);
+       border-radius:var(--radius);background:var(--surface);overflow:hidden;}
+.check.hold{border-color:var(--break-line);}
+.check.ready{border-color:#bfe0cd;}
+.chead{display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--sunken);
+       border-bottom:1px solid var(--line);}
+.check.hold .chead{background:var(--break-bg);border-bottom-color:var(--break-line);}
+.check.ready .chead{background:var(--ok-bg);border-bottom-color:#bfe0cd;}
+.chead .icon{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+             font:700 13px var(--sans);color:#fff;background:var(--break);flex:none;}
+.check.ready .chead .icon{background:var(--ok);}
+.check.review .chead .icon{background:var(--embarrass);}
+.chead .t{flex:1;}
+.chead .t b{font:600 15px var(--sans);display:block;}
+.chead .t span{font-size:13px;color:var(--ink-2);}
+.chead .again{border:1px solid var(--line-2);background:var(--surface);border-radius:7px;
+              padding:6px 11px;font:600 12.5px var(--sans);cursor:pointer;color:var(--ink-2);}
+.tiers{padding:6px 0;}
+.tier{padding:12px 20px 4px;}
+.tier h3{font:700 10.5px var(--sans);letter-spacing:.1em;text-transform:uppercase;
+         margin:0 0 9px;display:flex;align-items:center;gap:7px;}
+.tier.break h3{color:var(--break);} .tier.embarrass h3{color:var(--embarrass);}
+.tier.polish h3{color:var(--polish);}
+.tier h3 .n{background:currentColor;color:#fff;border-radius:20px;padding:1px 7px;
+            font:700 10.5px var(--sans);letter-spacing:0;}
+.tier.break h3 .n{color:#fff;}
+.f{border:1px solid var(--line);border-radius:9px;padding:13px 15px;margin-bottom:9px;}
+.f.done{background:var(--ok-bg);border-color:#bfe0cd;}
+.f.waved{opacity:.6;}
+.f .what{font:600 14.5px var(--sans);margin:0 0 3px;}
+.f .why{margin:0;color:var(--ink-2);font-size:13.5px;}
+.f .where{font-size:12px;color:var(--faint);margin-top:5px;}
+.f details{margin-top:7px;}
+.f summary{cursor:pointer;font:600 11px var(--sans);letter-spacing:.05em;
+           text-transform:uppercase;color:var(--muted);list-style:none;}
+.f summary::-webkit-details-marker{display:none;}
+.f summary::before{content:'› ';}
+.f details[open] summary::before{content:'⌄ ';}
+.f .tech{font-size:12.5px;color:var(--muted);margin-top:5px;}
+.f .swatches{display:flex;gap:8px;margin-top:9px;}
+.f .sw{flex:1;border:1px solid var(--line);border-radius:7px;overflow:hidden;min-width:0;}
+.f .sw .lab{font:700 9px var(--sans);letter-spacing:.08em;text-transform:uppercase;
+            padding:3px 7px;background:var(--sunken);color:var(--muted);}
+.f .sw .demo{padding:9px 7px;text-align:center;font:600 12.5px var(--sans);
+             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.acts{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap;align-items:center;}
+.a{border:1px solid var(--line-2);background:var(--surface);border-radius:7px;
+   padding:6px 11px;font:600 12.5px var(--sans);cursor:pointer;color:var(--ink-2);}
+.a:hover{border-color:var(--muted);color:var(--ink);}
+.a.primary{background:var(--ink);border-color:var(--ink);color:#fff;}
+.a.primary:hover{background:#26262b;}
+.a.undo{background:var(--ok-bg);border-color:#bfe0cd;color:var(--ok);}
+.a .k{opacity:.7;font-weight:500;}
+.wrapmenu{position:relative;}
+.menu{position:absolute;right:0;top:calc(100% + 5px);z-index:30;background:var(--surface);
+      border:1px solid var(--line-2);border-radius:9px;box-shadow:0 8px 26px rgba(0,0,0,.11);
+      padding:5px;min-width:196px;display:flex;flex-direction:column;gap:2px;}
+.menu button{border:0;background:transparent;text-align:left;padding:8px 10px;
+             border-radius:6px;font:500 13px var(--sans);cursor:pointer;color:var(--ink-2);}
+.menu button:hover{background:var(--sunken);color:var(--ink);}
+.waved-note{font:600 12.5px var(--sans);color:var(--muted);}
+.allclear{padding:22px 20px;text-align:center;color:var(--ink-2);font-size:14px;}
+
+/* ---- footer ---- */
+.foot{position:fixed;left:56px;right:0;bottom:0;background:var(--surface);
+      border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;
+      padding:14px 22px;}
+.foot .grow{flex:1;}
+.ghost{border:1px solid var(--line-2);background:var(--surface);border-radius:22px;
+       padding:9px 17px;font:600 13.5px var(--sans);cursor:pointer;}
+.link{border:0;background:transparent;font:600 13.5px var(--sans);cursor:pointer;
+      color:var(--ink-2);display:inline-flex;gap:7px;align-items:center;}
+.saved{color:var(--faint);font-size:13px;}
+.cont{border:0;border-radius:22px;padding:11px 21px;font:600 13.5px var(--sans);
+      cursor:pointer;background:var(--ink);color:#fff;display:inline-flex;gap:8px;align-items:center;}
+.cont[disabled]{background:var(--line);color:var(--faint);cursor:default;}
+.cont.risky{background:var(--surface);color:var(--break);border:1.5px solid var(--break-line);}
+.foot .gate{font-size:12.5px;color:var(--muted);}
+.foot .gate b{color:var(--break);}
+@media (prefers-reduced-motion:no-preference){
+  .f{transition:background .18s ease,border-color .18s ease;}
+}
+
+/* The creator's own broadcast, marked where it is wrong. A list of sentences
+   can say what; only the email itself can say where, and where is most of the
+   answer. Everything is drawn at once and coloured by consequence, so the
+   picture arrives before any reading does. */
+.checkgrid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);}
+@media (max-width:940px){.checkgrid{grid-template-columns:1fr;}}
+.pvpane{border-right:1px solid var(--line);background:var(--sunken);padding:14px;}
+@media (max-width:940px){.pvpane{border-right:0;border-bottom:1px solid var(--line);}}
+.pvstick{position:sticky;top:14px;}
+.pvframe{position:relative;height:min(66vh,640px);background:#fff;
+         border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+.pvframe iframe{width:100%;height:100%;border:0;display:block;}
+#ov{position:absolute;inset:0;pointer-events:none;}
+.pvlegend{display:flex;gap:11px;align-items:center;margin-top:9px;
+          font:500 11px var(--sans);color:var(--muted);}
+.pvlegend i{display:inline-flex;align-items:center;gap:4px;font-style:normal;}
+.pvlegend u{width:9px;height:9px;border-radius:2px;text-decoration:none;}
+.mk{position:absolute;border:2px solid #c62828;border-radius:3px;pointer-events:auto;
+    cursor:pointer;background:rgba(198,40,40,.10);box-shadow:0 0 0 3px rgba(198,40,40,.13);
+    transition:opacity .12s ease,box-shadow .12s ease;}
+.mk.s-will_embarrass{border-color:#b57d10;background:rgba(181,125,16,.13);
+                     box-shadow:0 0 0 3px rgba(181,125,16,.15);}
+.mk.s-could_be_better{border-color:#2f7c9e;background:rgba(47,124,158,.10);
+                      box-shadow:0 0 0 3px rgba(47,124,158,.13);}
+.mk.dim{opacity:.2;}
+.mk.on{opacity:1;box-shadow:0 0 0 4px rgba(47,109,246,.34);}
+.mk b{position:absolute;top:-10px;left:-9px;min-width:20px;height:20px;padding:0 5px;
+      border-radius:10px;background:#c62828;color:#fff;font:700 11px/20px var(--sans);
+      text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.32);}
+.mk.s-will_embarrass b{background:#b57d10;}
+.mk.s-could_be_better b{background:#2f7c9e;}
+/* The consequence, at the thing itself - understanding it costs no navigation. */
+.tipx{position:absolute;z-index:6;width:250px;padding:10px 12px;border-radius:9px;
+      background:var(--ink);color:#fff;font:400 12px/1.5 var(--sans);
+      box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:none;}
+.tipx b{display:block;font:700 10px var(--sans);letter-spacing:.06em;
+        text-transform:uppercase;margin-bottom:5px;opacity:.7;}
+.tipx s{display:block;margin-top:6px;opacity:.62;text-decoration:none;font-size:11px;}
+.num{display:inline-flex;gap:3px;flex-wrap:wrap;vertical-align:middle;margin:6px 0 2px;}
+.num button{min-width:19px;height:19px;padding:0 4px;border:0;border-radius:10px;
+            cursor:pointer;font:700 11px/19px var(--sans);color:#fff;background:var(--muted);}
+.tier.break .num button{background:#c62828;}
+.tier.embarrass .num button{background:#b57d10;}
+.tier.polish .num button{background:#2f7c9e;}
+.num button:hover,.num button.on{outline:2px solid var(--ink);outline-offset:1px;}
+.cnt{font:700 12px var(--sans);color:var(--ink-2);}
+
+/* Arriving clean. The creator was not stopped, so this is the only place the
+   check gets to say it looked - and saying what it examined is the whole value
+   on a send where nothing was wrong. */
+.passed{display:flex;align-items:flex-start;gap:10px;max-width:1060px;margin:18px auto 0;
+        background:#e7f5ed;border:1px solid #bfe3ce;border-radius:10px;padding:13px 16px;}
+.passed .tick{color:#12784a;font-size:15px;line-height:1.3;}
+.passed > span > b:first-child{font:600 14px var(--sans);color:#0f5c39;display:block;
+  margin-bottom:2px;}
+.passed #outcomeWhat b{display:inline;font-weight:600;}
+.passed span{font:400 13px/1.55 var(--sans);color:#2f6b4f;}
+
+/* The account sits at the foot of the rail, where Wren puts it. `margin-top:auto`
+   rather than a fixed offset, so it stays anchored whatever the rail holds. */
+.rail .acct{margin-top:auto;width:26px;height:26px;border-radius:50%;
+            background:#c9b8d8;cursor:pointer;flex:none;}
+
+.passed.warn{background:#fdf3d9;border-color:#eddbaa;}
+.passed.warn b{color:#8a6212;} .passed.warn .tick{color:#c99a2e;}
+.passed.neutral{background:var(--sunken);border-color:var(--line);}
+.passed.neutral b{color:var(--ink-2);} .passed.neutral .tick{color:var(--muted);}
+.passed .grow{flex:1;}
+.passed .again{font:600 12.5px var(--sans);color:var(--ink-2);text-decoration:none;
+               border:1px solid var(--line-2);border-radius:7px;padding:6px 11px;background:#fff;}
+
+.passed.warn #outcomeWhat b{color:#8a6212;}
+
+.steps{display:flex;align-items:center;gap:9px;}
+.steps a,.steps span.step{display:flex;align-items:center;gap:6px;
+  font:500 13.5px var(--sans);color:var(--muted);text-decoration:none;}
+.steps a:hover{color:var(--ink);}
+.steps .d{width:9px;height:9px;border-radius:50%;background:var(--line-2);}
+.steps .done .d{background:var(--ink-2);}
+.steps .now{color:var(--ink);font-weight:600;}
+.steps .now .d{background:var(--ink);box-shadow:0 0 0 3px rgba(22,24,29,.12);}
+.steps .sep{color:var(--faint);}
+
+/* Wayfinding sits with the title, where reading starts - not in the corner by
+   the account menu. The current step is filled, not merely bolder.
+
+   Teal, not black: black is the primary action on every one of these screens
+   (Fix all, Continue, Send), so a black pill reads as something to press. This
+   is a status, and it borrows the template's own colour to say "you are here".
+   The element+class selectors are needed to outrank the muted default. */
+.top .steps{margin-left:8px;}
+.steps span.step.now{background:var(--teal, #218b95);color:#fff;font-weight:600;
+                     border-radius:999px;padding:4px 13px 4px 10px;}
+.steps span.step.now .d{background:#fff;box-shadow:none;}
+.steps a.done{color:var(--ink-2);}
+.steps a.done .d{background:var(--teal, #218b95);}
+.steps a{padding:4px 2px;}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="rail">
+    <span class="logo">W</span>
+    <i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i>
+    <span class="acct" title="Your account"></span>
+  </nav>
+
+  <div class="main">
+    <div class="top">
+      <button class="back" id="backTop">←</button>
+      <h1>Publish broadcast</h1>
+      <span class="steps">
+        <a class="done" href="/editor"><span class="d"></span>Draft</a>
+        <span class="sep">›</span>
+        <a class="done" href="/launch-check"><span class="d"></span>Check</a>
+        <span class="sep">›</span>
+        <span class="step now"><span class="d"></span>Publish</span>
+      </span>
+      <span class="grow"></span>
+      <span class="sep">⋮</span>
+    </div>
+
+    <div class="body">
+      <div class="card">
+        <h2>Publish Broadcast</h2>
+        <p class="sub">Choose where you would like to publish this Broadcast to</p>
+        <div class="opts">
+          <div class="opt">
+            <div class="txt"><b>Send email</b></div>
+            <div class="box" role="checkbox" aria-checked="true" tabindex="0" id="optEmail"></div>
+          </div>
+          <div class="opt">
+            <div class="txt"><b>Add to your Newsletter site</b>
+              <span>Appears as a public post on your newsletter site</span></div>
+            <div class="box" role="checkbox" aria-checked="false" tabindex="0" id="optSite"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="passed" id="outcome" hidden>
+        <span class="tick" id="outcomeIcon">✓</span>
+        <span><b id="outcomeTitle">Launch Check passed</b><span id="outcomeWhat"></span></span>
+        <span class="grow"></span>
+        <a class="again" href="/launch-check">Review again</a>
+      </div>
+
+    </div>
+
+    <div class="foot">
+      <button class="ghost" id="back">← Back</button>
+      <button class="link" id="preview">👁 Preview</button>
+      <span class="grow"></span>
+      <span class="gate" id="gate"></span>
+      <span class="saved">☁ Saved</span>
+      <button class="cont" id="cont">Send Broadcast →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => (s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* What the review step decided, carried across.
+
+   This screen used to re-audit the original draft, which meant it contradicted
+   the step before it and offered a second set of Fix buttons for work already
+   done. The check happens once, at /review; here we only report its outcome and
+   publish. */
+(() => {
+  let d = null;
+  try { d = JSON.parse(sessionStorage.getItem('lc_outcome') || 'null'); } catch {}
+  const box = $('#outcome');
+  if (!box) return;
+  if (!d){
+    // Arrived without going through the check - say so rather than imply a pass.
+    $('#outcomeIcon').textContent = '·';
+    $('#outcomeTitle').textContent = 'Not checked yet';
+    $('#outcomeWhat').textContent = ' Run Launch Check before sending, or send as you are.';
+    box.classList.add('neutral');
+    box.hidden = false;
+    return;
+  }
+  if (d.unresolved){
+    $('#outcomeIcon').textContent = '!';
+    $('#outcomeTitle').textContent = `Sending with ${d.unresolved} unresolved`;
+    // Name who could have resolved each. A flat count hid the fact that some of
+    // them were one click away, which is the thing worth knowing here.
+    const parts = [];
+    if (d.repairable) parts.push(
+      `<b>${d.repairable} we could repair for you</b> in one click`);
+    if (d.manual) parts.push(
+      `${d.manual} only you can change`);
+    $('#outcomeWhat').innerHTML =
+      (d.fixed ? ` ${d.fixed} already repaired. ` : ' ') +
+      (parts.length ? parts.join(' · ') + '.' : 'You chose to send these as they are.');
+    box.classList.add('warn');
+  } else {
+    $('#outcomeIcon').textContent = '✓';
+    $('#outcomeTitle').textContent = 'Launch Check passed';
+    $('#outcomeWhat').textContent = d.fixed
+      ? ` ${d.fixed} repaired. Nothing left that will break or embarrass you.`
+      : (d.checks ? ` Checked ${d.checks} ways across ${d.elements} elements, ${d.links} links and ${d.images} images.`
+                  : ' Nothing here will break or embarrass you.');
+  }
+  box.hidden = false;
+})();
+
+/* Back goes to the step before, which is the check - not into browser history,
+   which may hold anything. Both back controls do the same thing. */
+const toReview = () => { location.href = '/launch-check'; };
+$('#back').onclick = toReview;
+$('#backTop').onclick = toReview;
+$('#preview').onclick = toReview;
+
+/* This is where a real send would happen, so it says what it does and asks
+   once. Nothing here is reversible in the product this stands in for. */
+$('#cont').onclick = () => {
+  const btn = $('#cont');
+  if (btn.dataset.armed !== '1'){
+    btn.dataset.armed = '1';
+    btn.textContent = 'Confirm send →';
+    btn.classList.add('risky');
+    $('#gate').textContent = 'This cannot be undone. Press again to send.';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '✓ Sent';
+  btn.classList.remove('risky');
+  $('#gate').textContent = '';
+  // The banner was still saying "Sending with 4 unresolved" and offering
+  // "Review again" after the mail had gone. Nothing about a sent broadcast is
+  // reviewable, and the tense mattered.
+  const box = $('#outcome');
+  const again = box.querySelector('.again');
+  if (again) again.remove();
+  const t = $('#outcomeTitle').textContent;
+  $('#outcomeTitle').textContent = t.replace(/^Sending with/, 'Sent with')
+                                    .replace(/^Launch Check passed/, 'Sent · Launch Check passed');
+  $('#outcomeWhat').innerHTML = ' It is on its way and cannot be recalled.';
+  $('#back').disabled = true;
+  $('#preview').disabled = true;
+};
+
+for (const id of ['optEmail','optSite']){
+  const el = document.getElementById(id);
+  if (el) el.onclick = () => el.setAttribute('aria-checked',
+    el.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+}
+</script>
+
+<!-- Wren is invented. The chrome exists so the insertion point can be judged
+     where a check like this would really live. -->
+<div style="max-width:760px;margin:0 auto;padding:14px 22px 20px;font:400 11.5px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#6b7482;text-align:center;">
+  Wren is a fictional newsletter platform, invented for this study.
+  It exists so the check can be judged where it would actually sit.
+</div>
+</body>
+</html>

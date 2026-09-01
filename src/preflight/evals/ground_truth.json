@@ -1,0 +1,425 @@
+{
+  "link_status": {
+    "https://wren-preflight-fixture.invalid/deleted-post": 404,
+    "https://wren-preflight-fixture.invalid/boom": 500,
+    "https://wren.email/creator-guide": 200,
+    "https://wren.email/plain-text-archive": 200,
+    "https://wren.email/launch-notes": 200
+  },
+  "cases": {
+    "sample_1_contrast.html": {
+      "description": "Isolated WCAG contrast failures on a clean, well-formed layout.",
+      "expected_verdict": "HOLD",
+      "expected": [
+        {
+          "code": "contrast.aa_fail",
+          "target": "headline",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "contrast.aa_fail",
+          "target": "intro",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "contrast.aa_fail",
+          "target": "footer-note",
+          "severity": "will_embarrass"
+        }
+      ],
+      "forbidden": [
+        {
+          "code": "contrast.aa_fail",
+          "target": "good-copy",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "contrast.aa_fail",
+          "target": "cta",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "img.missing_alt",
+          "target": "sig",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "img.filename_alt",
+          "target": "sig",
+          "severity": "will_embarrass"
+        }
+      ],
+      "controls": [
+        "good-copy passes at 12.6:1",
+        "cta passes",
+        "sig has real alt text"
+      ]
+    },
+    "sample_2_darkmode.html": {
+      "description": "Isolated dark-mode invisibility: unpainted surfaces and a recolor with no background.",
+      "expected_verdict": "HOLD",
+      "expected": [
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "title",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "card-copy",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "orphan-copy",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.unsafe_override",
+          "target": "card-copy",
+          "severity": "will_embarrass"
+        }
+      ],
+      "forbidden": [
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "safe-copy",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.unsafe_override",
+          "target": "safe-copy",
+          "severity": "will_embarrass"
+        }
+      ],
+      "controls": [
+        "safe-copy pins its own surface and must not be flagged"
+      ]
+    },
+    "sample_3_links_assets.html": {
+      "description": "Isolated link and asset hygiene: dead targets, dead-end href, bare URL, missing and lazy alt text, and an image-to-copy ratio filters punish.",
+      "expected_verdict": "HOLD",
+      "expected": [
+        {
+          "code": "link.broken",
+          "target": "dead-link",
+          "severity": "will_break"
+        },
+        {
+          "code": "link.broken",
+          "target": "server-error",
+          "severity": "will_break"
+        },
+        {
+          "code": "link.empty_href",
+          "target": "empty-link",
+          "severity": "will_break"
+        },
+        {
+          "code": "link.bare_url",
+          "target": "raw-url",
+          "severity": "could_be_better"
+        },
+        {
+          "code": "img.missing_alt",
+          "target": "hero",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "img.filename_alt",
+          "target": "badge",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "deliverability.image_heavy",
+          "target": "document",
+          "severity": "will_embarrass"
+        }
+      ],
+      "forbidden": [
+        {
+          "code": "link.broken",
+          "target": "good-link",
+          "severity": "will_break"
+        },
+        {
+          "code": "img.missing_alt",
+          "target": "logo",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "img.filename_alt",
+          "target": "logo",
+          "severity": "will_embarrass"
+        }
+      ],
+      "controls": [
+        "good-link resolves 200",
+        "logo has real alt text"
+      ]
+    },
+    "sample_4_cta_spam.html": {
+      "description": "Buried CTA and spam-trigger copy. Deterministically clean by construction - this file scores Module B.",
+      "expected_verdict": "HOLD",
+      "expected": [
+        {
+          "code": "spam.trigger_phrase",
+          "target": "*"
+        },
+        {
+          "code": "spam.trigger_phrase",
+          "target": "*"
+        },
+        {
+          "code": "cta.buried",
+          "target": "*"
+        },
+        {
+          "code": "cta.weak_prominence",
+          "target": "*"
+        }
+      ],
+      "forbidden": [
+        {
+          "code": "contrast.aa_fail",
+          "target": "*",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "link.broken",
+          "target": "*",
+          "severity": "will_break"
+        },
+        {
+          "code": "img.missing_alt",
+          "target": "*",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "*",
+          "severity": "will_embarrass"
+        }
+      ],
+      "controls": [
+        "contrast, links, and alt text are all correct here",
+        "two distinct spam-trigger locations: the headline and the first paragraph"
+      ]
+    },
+    "sample_5_mixed.html": {
+      "description": "Multi-failure realistic send: contrast, dead links, dark-mode collapse, missing alt, weak CTA.",
+      "expected_verdict": "HOLD",
+      "expected": [
+        {
+          "code": "contrast.aa_fail",
+          "target": "lede",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "contrast.aa_fail",
+          "target": "disclaimer",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "contrast.aa_fail",
+          "target": "cta-button",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "headline",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "body",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "raw-url",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "cta-button",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.unsafe_override",
+          "target": "disclaimer",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "link.broken",
+          "target": "dead-link",
+          "severity": "will_break"
+        },
+        {
+          "code": "link.broken",
+          "target": "server-error",
+          "severity": "will_break"
+        },
+        {
+          "code": "link.bare_url",
+          "target": "raw-url",
+          "severity": "could_be_better"
+        },
+        {
+          "code": "img.missing_alt",
+          "target": "hero",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "cta.weak_prominence",
+          "target": "*"
+        }
+      ],
+      "forbidden": [],
+      "controls": [
+        "Liquid tags in #body must survive the fixer untouched"
+      ]
+    },
+    "sample_7_liquid.html": {
+      "description": "Liquid that reaches the inbox as literal text: an unclosed merge field and an unclosed block, beside two correct ones.",
+      "expected_verdict": "HOLD",
+      "expected": [
+        {
+          "code": "liquid.unparsed",
+          "target": "line 24",
+          "severity": "will_break"
+        },
+        {
+          "code": "liquid.unparsed",
+          "target": "line 27",
+          "severity": "will_break"
+        },
+        {
+          "code": "liquid.unclosed_block",
+          "target": "{% for %}",
+          "severity": "will_break"
+        }
+      ],
+      "forbidden": [
+        {
+          "code": "contrast.aa_fail",
+          "target": "*"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "*"
+        },
+        {
+          "code": "link.broken",
+          "target": "*"
+        }
+      ],
+      "controls": [
+        "good-merge and good-block are well-formed and must not be flagged",
+        "the unclosed {% for %} is not rescued by the correct tags above it",
+        "deterministically clean apart from the Liquid"
+      ]
+    },
+    "sample_8_envelope.html": {
+      "description": "The lines a subscriber reads before opening, plus link text that promises nothing. Deterministically clean otherwise.",
+      "expected_verdict": "REVIEW",
+      "envelope": {
+        "subject": "A few things I have been meaning to tell you about this week's workshop",
+        "preheader": ""
+      },
+      "expected": [
+        {
+          "code": "subject.too_long",
+          "target": "subject",
+          "severity": "could_be_better"
+        },
+        {
+          "code": "preheader.missing",
+          "target": "preheader",
+          "severity": "could_be_better"
+        },
+        {
+          "code": "link.vague_text",
+          "target": "vague-link",
+          "severity": "could_be_better"
+        }
+      ],
+      "forbidden": [
+        {
+          "code": "link.vague_text",
+          "target": "named-link"
+        },
+        {
+          "code": "link.vague_text",
+          "target": "cta"
+        },
+        {
+          "code": "contrast.aa_fail",
+          "target": "*"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "*"
+        },
+        {
+          "code": "link.broken",
+          "target": "*"
+        }
+      ],
+      "controls": [
+        "named-link and cta both name their destination and must not be flagged",
+        "nothing here blocks a send - these are all advisory, so the verdict is REVIEW"
+      ]
+    },
+    "sample_6_clean.html": {
+      "description": "Negative control. Any scored finding here is a false positive.",
+      "expected_verdict": "READY",
+      "expected": [],
+      "forbidden": [
+        {
+          "code": "contrast.aa_fail",
+          "target": "*",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.no_bg_override",
+          "target": "*",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "darkmode.unsafe_override",
+          "target": "*",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "img.missing_alt",
+          "target": "*",
+          "severity": "will_embarrass"
+        },
+        {
+          "code": "link.broken",
+          "target": "*",
+          "severity": "will_break"
+        },
+        {
+          "code": "cta.weak_prominence",
+          "target": "*"
+        },
+        {
+          "code": "cta.buried",
+          "target": "*"
+        },
+        {
+          "code": "spam.trigger_phrase",
+          "target": "*"
+        }
+      ],
+      "controls": [
+        "every surface painted",
+        "dark-mode block pairs color with background",
+        "CTA is isolated, high-contrast, above the fold",
+        "footer clears AAA too, so READY is a reachable verdict and not a dead tier"
+      ]
+    }
+  }
+}

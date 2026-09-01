@@ -1,0 +1,13 @@
+.venv/
+.git/
+.pytest_cache/
+__pycache__/
+tests/
+docs/
+private/
+.env
+.env.local
+.env.*.local
+*.md
+!README.md
+src/preflight/evals/real/*.html

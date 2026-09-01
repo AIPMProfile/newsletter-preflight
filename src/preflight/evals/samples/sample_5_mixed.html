@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    .wrap { width: 600px; margin: 0 auto; font-family: Helvetica, Arial, sans-serif; }
+    .fine-print { color: #b4b4b4; font-size: 12px; }
+    @media (prefers-color-scheme: dark) {
+      .fine-print { color: #ededed; }
+    }
+  </style>
+</head>
+<body>
+  <table class="wrap" role="presentation"><tr>
+    <td style="padding: 32px;">
+      <h1 id="headline" style="color: #1a1a1a; font-size: 30px;">The launch is live</h1>
+      <img id="hero" src="launch-hero.png" width="520">
+      <p id="lede" style="color: #9b9b9b; font-size: 16px;">
+        Hi {{ subscriber.first_name }} - the thing I have been building for eight months is finally out.
+      </p>
+      <p id="body" style="color: #2b2b2b; font-size: 16px;">
+        {% if subscriber.tags contains "early" %}You have had access for a week already.{% endif %}
+        The full write-up is <a id="dead-link" href="https://wren-preflight-fixture.invalid/deleted-post">on the blog</a>, and the changelog is
+        <a id="server-error" href="https://wren-preflight-fixture.invalid/boom">here</a>.
+      </p>
+      <p id="raw-url" style="color: #2b2b2b; font-size: 16px;">
+        Direct link, if you prefer: https://wren.email/launch-notes
+      </p>
+      <p id="disclaimer" class="fine-print">
+        No refunds after 30 days. Prices shown exclude tax.
+      </p>
+      <p><a id="cta-button" href="https://wren.email/creator-guide" style="color: #7a7a7a; font-size: 13px;">maybe check it out</a></p>
+    </td>
+  </tr></table>
+</body>
+</html>

@@ -1,0 +1,34 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+fixed_*.html
+.env
+.env.local
+.env.*.local
+
+# Benchmark run history. Local record of what the agent scored over time -
+# useful to you, a merge conflict on every branch if it were shared.
+src/preflight/evals/history.jsonl
+
+# Prevalence corpus. Fetched or exported broadcast HTML - large, reproducible
+# from real/manifest.json, and real exports can carry subscriber data. The
+# manifest, the README and PREVALENCE_REPORT.md are tracked; the mail is not.
+src/preflight/evals/real/*.html
+
+# Application-specific writing. Kept locally, not part of the public repo.
+# Ignored by directory so the filenames themselves stay out of the tree.
+private/
+
+# Agent-harness config. Local tooling, not part of the product.
+.claude/
+.agents/
+skills-lock.json
+
+# Held out of the repo until the token carries the workflow scope.
+.github/workflows/ci.yml
+
+# Contributor mechanics and a second decision list. Kept locally; this repo
+# is a product portfolio, not a contribution guide.
+docs/DECISION_LOG.md
+docs/ENGINEERING.md

@@ -1,0 +1,38 @@
+{
+  "provenance": "authored",
+  "cta_summary": "The only call to action is a small underlined 'click here now' at the very bottom, after five paragraphs of preamble.",
+  "findings": [
+    {
+      "code": "spam.trigger_phrase",
+      "target": "headline",
+      "severity": "will_embarrass",
+      "message": "The subject-line-sized headline stacks three classic filter triggers: all-caps urgency, triple exclamation marks, and a money guarantee.",
+      "remedy": "Rewrite as a plain-language promise of what the reader gets.",
+      "quote": "ACT NOW!!! 100% FREE MONEY GUARANTEED"
+    },
+    {
+      "code": "spam.trigger_phrase",
+      "target": "p1",
+      "severity": "will_embarrass",
+      "message": "'RISK-FREE', 'no-obligation', 'once-in-a-lifetime' and 'Limited time only' in one paragraph read as promotional boilerplate to both filters and readers.",
+      "remedy": "Keep one specific claim and cut the rest.",
+      "quote": "RISK-FREE, no-obligation, once-in-a-lifetime opportunity"
+    },
+    {
+      "code": "cta.buried",
+      "target": "cta-button",
+      "severity": "will_embarrass",
+      "message": "The action sits below four paragraphs of personal preamble, well past the fold - most readers will never reach it.",
+      "remedy": "Move the link above the fold, directly under the opening line.",
+      "quote": "click here now"
+    },
+    {
+      "code": "cta.weak_prominence",
+      "target": "cta-button",
+      "severity": "will_embarrass",
+      "message": "'click here now' is 13px underlined text in the same color as body copy - it does not read as a button.",
+      "remedy": "Give it a filled background, larger type, and label it with the outcome.",
+      "quote": "click here now"
+    }
+  ]
+}

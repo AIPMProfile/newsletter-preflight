@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <style>
+    .wrap { width: 600px; margin: 0 auto; font-family: Helvetica, Arial, sans-serif; }
+    .surface { background-color: #ffffff; color: #1f1f1f; }
+    @media (prefers-color-scheme: dark) {
+      .surface { background-color: #17181a; color: #f2f2f2; }
+    }
+  </style>
+</head>
+<body>
+  <table class="wrap" role="presentation"><tr>
+    <td id="canvas" class="surface" bgcolor="#ffffff" style="padding: 32px; background-color: #ffffff;">
+      <h1 id="headline" style="color: #111111; font-size: 30px; background-color: #ffffff;">This week in the workshop</h1>
+      <p id="lede" style="color: #1f1f1f; font-size: 17px; background-color: #ffffff;">
+        Hi {{ subscriber.first_name }}, two things worth your time and one worth skipping.
+      </p>
+      <p id="vague-wrap" style="color: #1f1f1f; font-size: 17px; background-color: #ffffff;">
+        The full breakdown is up now - <a id="vague-link" href="https://wren.email/creator-guide" style="color: #14477d;">click here</a>.
+      </p>
+      <p id="named-wrap" style="color: #1f1f1f; font-size: 17px; background-color: #ffffff;">
+        Or jump straight to <a id="named-link" href="https://wren.email/creator-guide" style="color: #14477d;">the pricing teardown</a>.
+      </p>
+      <p id="cta-wrap" style="background-color: #ffffff;">
+        <a id="cta" href="https://wren.email/creator-guide"
+           style="background-color: #14477d; color: #ffffff; font-size: 17px; font-weight: bold; padding: 14px 28px; display: inline-block; text-decoration: none;">Read the teardown</a>
+      </p>
+    </td>
+  </tr></table>
+</body>
+</html>

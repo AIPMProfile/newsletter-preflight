@@ -1,0 +1,1161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review before sending · Launch Check</title>
+<style>
+/* Wren's chrome, matched to the shipping broadcast editor: the rail, the amber
+   confirmation banner, the top and bottom bars, the black pill Continue. This
+   step sits between the editor and publish, so it has to feel like the screen
+   before it, not like a tool bolted on. */
+:root{
+  --ink:#16181d; --ink-2:#3f4147; --muted:#6b7280; --faint:#9ca3af;
+  --line:#e5e7eb; --line-2:#d1d5db; --surface:#ffffff; --bg:#fafafa; --sunken:#f3f4f6;
+  --teal:#218b95; --amber:#f5c842; --amber-bg:#fef7e6;
+  /* Severity, drawn from the palette already on this screen: the error pink Wren
+     uses in the sidebar, the amber from its banner, the teal of the template. */
+  --break-fill:#fde9e7; --break-edge:#d64545;
+  --emb-fill:#fdf3d9;  --emb-edge:#c99a2e;
+  --pol-fill:#e4f1f2;  --pol-edge:#218b95;
+  --ok-edge:#12784a;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Helvetica,Arial,sans-serif;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+     -webkit-font-smoothing:antialiased;}
+button{font-family:inherit;}
+
+/* ---- banner ---- */
+.banner{display:flex;align-items:center;gap:11px;background:var(--amber-bg);
+        border-bottom:1px solid #f2e4bf;padding:9px 16px;font:400 13.5px var(--sans);}
+.banner .tri{color:#b7791f;font-size:14px;}
+.banner b{font-weight:600;}
+.banner .grow{flex:1;}
+.banner .pill{background:var(--amber);border:0;border-radius:7px;padding:7px 13px;
+              font:600 13px var(--sans);color:#3d2f06;cursor:pointer;}
+
+/* ---- shell ---- */
+.shell{display:flex;height:100vh;}
+.rail{width:46px;flex:none;border-right:1px solid var(--line);background:var(--surface);
+      display:flex;flex-direction:column;align-items:center;gap:19px;padding:13px 0;}
+.rail .logo{width:26px;height:26px;border-radius:7px;background:var(--ink);color:#fff;
+            font:800 15px/26px var(--sans);text-align:center;}
+.rail i{width:19px;height:19px;border-radius:5px;background:var(--line);}
+.rail i.on{background:var(--ink);}
+.main{flex:1;min-width:0;overflow:hidden;display:flex;flex-direction:column;background:var(--surface);}
+
+/* ---- top bar ---- */
+.top{display:flex;align-items:center;gap:13px;padding:14px 20px;border-bottom:1px solid var(--line);}
+.top .back{border:0;background:none;font-size:17px;color:var(--ink-2);cursor:pointer;padding:0 2px;}
+.top h1{font:500 19px var(--sans);margin:0;}
+.top .grow{flex:1;}
+.top .who{width:25px;height:25px;border-radius:50%;background:#c9b8d8;}
+.top .state{display:flex;align-items:center;gap:6px;font:500 13.5px var(--sans);color:var(--ink-2);}
+.top .dot{width:9px;height:9px;border-radius:50%;background:var(--ink);}
+.top .dot.off{background:var(--line-2);}
+.top .sep{color:var(--faint);}
+.top .kebab{color:var(--ink-2);cursor:pointer;}
+
+/* ---- work area ----
+   Tinting every instance painted the whole article one colour, because most
+   findings are the same problem repeating - and once everything is marked,
+   nothing is. So the page stays clean and the margin carries the map: a rail of
+   ticks showing where the problems are, and exactly one passage lit at a time,
+   the one being explained. This is how a person marks up a manuscript. */
+.work{flex:1;display:flex;min-height:0;min-width:0;overflow:hidden;}
+.stage{flex:1;min-width:0;background:var(--sunken);position:relative;overflow:hidden;}
+.stage iframe{width:100%;height:100%;border:0;display:block;}
+
+/* ---- right panel ---- */
+aside{width:430px;flex:0 0 430px;min-width:0;border-left:1px solid var(--line);background:var(--surface);
+      display:flex;flex-direction:column;min-height:0;}
+.phead{padding:16px 18px;border-bottom:1px solid var(--line);}
+.phead .h{display:flex;align-items:center;gap:8px;}
+.phead h2{font:600 15px var(--sans);margin:0;flex:1;}
+.chip{font:700 10px var(--sans);letter-spacing:.06em;text-transform:uppercase;
+      padding:3px 8px;border-radius:20px;}
+.chip.will_break{background:var(--break-fill);color:#9b2c2c;}
+.chip.will_embarrass{background:var(--emb-fill);color:#8a6212;}
+.chip.could_be_better{background:var(--pol-fill);color:#14606a;}
+.chip.ready{background:#e7f5ed;color:#12784a;}
+.phead .sub{font:400 13px/1.55 var(--sans);color:var(--muted);margin:5px 0 0;}
+.fixall{width:100%;margin-top:12px;background:var(--ink);color:#fff;border:0;
+        border-radius:8px;padding:10px 14px;font:600 13.5px var(--sans);cursor:pointer;}
+.fixall:disabled{background:var(--sunken);color:var(--faint);cursor:default;}
+
+/* One issue at a time: the section they are looking at. Scrolling is the
+   navigation, so nothing has to be read that is not in front of them. */
+.pbody{flex:1;overflow-y:auto;padding:18px;}
+.nav{display:flex;align-items:center;gap:8px;margin-bottom:14px;
+     font:500 12px var(--sans);color:var(--muted);}
+.nav button{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+            border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:13px;}
+.nav .grow{flex:1;}
+.issue h3{font:600 16px/1.35 var(--sans);margin:9px 0 8px;}
+/* The outcome, first and in their words. The measurement lives under
+   "learn more" - moving it is an information-hierarchy decision, not a
+   simplification, so it never disappears. */
+.impact{font:400 14px/1.6 var(--sans);color:var(--ink-2);margin:0 0 14px;}
+.impact b{font-weight:600;color:var(--ink);}
+.acts{display:flex;flex-wrap:wrap;gap:7px;}
+.a{border:1px solid var(--line-2);background:var(--surface);color:var(--ink);
+   border-radius:8px;padding:9px 13px;font:600 13px var(--sans);cursor:pointer;}
+.a.primary{background:var(--ink);border-color:var(--ink);color:#fff;}
+.a.done{background:#e7f5ed;border-color:#bfe3ce;color:#12784a;}
+.wrapmenu{position:relative;}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:60;background:var(--surface);
+      border:1px solid var(--line-2);border-radius:9px;
+      box-shadow:0 12px 34px rgba(22,24,29,.22), 0 2px 6px rgba(22,24,29,.10);
+      padding:5px;display:flex;flex-direction:column;min-width:206px;}
+.menu button{border:0;background:none;text-align:left;padding:8px 10px;border-radius:6px;
+             font:500 13px var(--sans);color:var(--ink-2);cursor:pointer;}
+.menu button:hover{background:var(--sunken);}
+details.more{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;}
+details.more summary{font:600 12.5px var(--sans);color:var(--muted);cursor:pointer;
+                     list-style:none;}
+details.more summary::-webkit-details-marker{display:none;}
+details.more summary:after{content:' ▾';}
+details.more[open] summary:after{content:' ▴';}
+.tech{margin-top:9px;font:400 12.5px/1.6 var(--sans);color:var(--muted);}
+.tech code{font:12px ui-monospace,Menlo,monospace;background:var(--sunken);
+           padding:1px 4px;border-radius:4px;}
+.empty{font:400 13.5px/1.6 var(--sans);color:var(--muted);}
+.waved{background:var(--sunken);border-radius:8px;padding:11px 13px;
+       font:400 13px var(--sans);color:var(--muted);}
+
+/* ---- bottom bar ---- */
+.foot{display:flex;align-items:center;gap:14px;padding:13px 20px;
+      border-top:1px solid var(--line);background:var(--surface);}
+.foot .grow{flex:1;}
+.foot .mini{display:flex;align-items:center;gap:6px;font:500 13px var(--sans);color:var(--ink-2);}
+.foot .saved{color:var(--faint);}
+.gate{font:500 12.5px var(--sans);color:var(--muted);}
+.cont{background:var(--ink);color:#fff;border:0;border-radius:999px;padding:11px 22px;
+      font:600 13.5px var(--sans);cursor:pointer;display:flex;align-items:center;gap:7px;}
+.cont.risky{background:var(--surface);color:#9b2c2c;border:1.5px solid #eab8b8;}
+
+/* Compact by default: the consequence in one line, then the two things they can
+   actually do. Everything that explains rather than decides sits behind
+   "View more" - it is there for whoever wants it and costs nothing to whoever
+   does not. */
+.lead{font:600 16px/1.45 var(--sans);margin:10px 0 14px;}
+.acts .a{flex:1;min-width:112px;text-align:center;}
+.grpline{margin-top:12px;background:var(--sunken);border-radius:8px;padding:10px 12px;
+         font:400 12.5px/1.5 var(--sans);color:var(--muted);}
+.grpline b{color:var(--ink);font-weight:600;}
+.grpline button{margin-top:7px;width:100%;border:1px solid var(--line-2);background:var(--surface);
+                color:var(--ink);border-radius:7px;padding:8px 10px;font:600 12.5px var(--sans);
+                cursor:pointer;}
+.here{display:flex;align-items:center;gap:7px;font:600 11px var(--sans);
+      letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.here .pulse{width:7px;height:7px;border-radius:50%;background:var(--emb-edge);}
+.here.will_break .pulse{background:var(--break-edge);}
+.here.could_be_better .pulse{background:var(--pol-edge);}
+
+/* Repeat instances of the problem you are on: visible enough to show how far it
+   reaches, quiet enough not to compete with the one being explained. */
+.mk.echo{border-style:dashed;}
+.mk.echo.on{opacity:.85;}
+.nav{flex-wrap:nowrap;}
+.nav span{white-space:nowrap;}
+.nav .chip{margin-left:auto;}
+
+/* The status row is one line. It wrapped, and a wrapped row of controls reads
+   as broken layout rather than as information. */
+.chip{white-space:nowrap;}
+.nav{align-items:center;}
+.nav button{flex:none;}
+.nav > span:not(.chip):not(.grow){white-space:nowrap;font-variant-numeric:tabular-nums;}
+/* The menu is a layer over the panel, so it needs a backdrop that says so. */
+.wrapmenu{position:relative;z-index:60;}
+
+/* The issue carries the colour of the passage it describes, so the link between
+   the two sides is colour, not memory. */
+.issue-wrap{border-left:3px solid var(--emb-edge);padding-left:13px;margin-left:-1px;}
+.issue-wrap.will_break{border-left-color:var(--break-edge);}
+.issue-wrap.will_embarrass{border-left-color:var(--emb-edge);}
+.issue-wrap.could_be_better{border-left-color:var(--pol-edge);}
+.here .pulse{width:8px;height:8px;}
+/* Override opens in place. A floating menu covered the explanation underneath
+   it, which is the one thing a creator is trying to read. */
+.reasons{margin-top:9px;display:flex;flex-direction:column;gap:5px;}
+/* `display:flex` outranks the user-agent rule for [hidden], so the override
+   reasons were open before anyone asked for them. */
+.reasons[hidden]{display:none;}
+.reasons button{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+                border-radius:8px;padding:9px 12px;font:500 13px var(--sans);cursor:pointer;
+                text-align:left;}
+.reasons button:hover{background:var(--sunken);border-color:var(--line-2);}
+
+/* Seeing it is the argument. Most of these findings are about a screen the
+   creator never looks at, so the product has to be able to show them that
+   screen - "this disappears in dark mode" means nothing until it disappears. */
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;}
+.seg button{border:0;background:var(--surface);color:var(--muted);cursor:pointer;
+            padding:6px 12px;font:600 12px var(--sans);}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff;}
+.headrow{display:flex;align-items:center;gap:10px;margin-top:11px;flex-wrap:wrap;}
+
+/* Every problem, listed and tagged. A stepper that says "2 / 6" cannot tell you
+   what the other five are or where they live; a list can. */
+.probs{border-top:1px solid var(--line);}
+.prob{border-bottom:1px solid var(--line);cursor:pointer;}
+.prob-head{display:flex;align-items:center;gap:9px;padding:12px 18px;}
+.prob-head:hover{background:var(--sunken);}
+.prob .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+.prob.will_break .dot{background:var(--break-edge);}
+.prob.will_embarrass .dot{background:var(--emb-edge);}
+.prob.could_be_better .dot{background:var(--pol-edge);}
+.prob .nm{flex:1;font:600 13.5px var(--sans);color:var(--ink);}
+.prob .ct{font:500 11.5px var(--sans);color:var(--muted);white-space:nowrap;}
+.prob .caret{color:var(--faint);font-size:11px;}
+.prob[data-open="true"]{background:var(--surface);}
+.prob[data-open="true"] .prob-head{background:var(--sunken);}
+.prob[data-open="true"].will_break{box-shadow:inset 3px 0 0 var(--break-edge);}
+.prob[data-open="true"].will_embarrass{box-shadow:inset 3px 0 0 var(--emb-edge);}
+.prob[data-open="true"].could_be_better{box-shadow:inset 3px 0 0 var(--pol-edge);}
+.prob-body{padding:2px 18px 16px;}
+.prob.done .nm{color:var(--muted);text-decoration:line-through;}
+
+.prob .num{width:20px;height:20px;flex:none;border-radius:50%;color:#fff;
+           font:700 11px/20px var(--sans);text-align:center;}
+.prob.will_break .num{background:var(--break-edge);}
+.prob.will_embarrass .num{background:var(--emb-edge);}
+.prob.could_be_better .num{background:var(--pol-edge);}
+.prob.done .num{background:var(--line-2);}
+.prob.hot .prob-head{background:var(--sunken);}
+.prob.hot.will_break{box-shadow:inset 3px 0 0 var(--break-edge);}
+.prob.hot.will_embarrass{box-shadow:inset 3px 0 0 var(--emb-edge);}
+.prob.hot.could_be_better{box-shadow:inset 3px 0 0 var(--pol-edge);}
+
+.bulk{display:flex;gap:8px;margin-top:12px;}
+.bulk .fixall{margin-top:0;flex:1;}
+.overrideall{flex:none;background:var(--surface);color:var(--ink-2);
+             border:1px solid var(--line-2);border-radius:8px;padding:10px 14px;
+             font:600 13.5px var(--sans);cursor:pointer;white-space:nowrap;}
+.overrideall:hover{background:var(--sunken);}
+#bulkreasons{margin-top:9px;}
+
+.seglabel{font:600 11px var(--sans);letter-spacing:.05em;text-transform:uppercase;
+          color:var(--muted);}
+/* The switch belongs beside the finding too. A creator reading "this disappears
+   in dark mode" should be one press from watching it disappear - putting that
+   only in a header means the proof lives away from the claim. */
+.seeit{margin-top:11px;width:100%;border:1px solid var(--line-2);background:var(--surface);
+       color:var(--ink);border-radius:8px;padding:9px 12px;font:600 13px var(--sans);
+       cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+.seeit:hover{background:var(--sunken);}
+.seeit .moon{font-size:13px;}
+
+/* A real row in the layout, not a layer over the words. Floating this bar put
+   it on top of the creator's own writing, which is the one place a review tool
+   has no business covering. */
+.canvas{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;}
+.stagebar{flex:none;display:flex;align-items:center;gap:11px;padding:9px 16px;
+          border-bottom:1px solid var(--line);background:var(--surface);}
+.vb-label{font:600 11px var(--sans);letter-spacing:.05em;text-transform:uppercase;
+          color:var(--muted);}
+.vb-sep{width:1px;height:18px;background:var(--line);}
+
+.prompt{display:block;margin-top:9px;padding:8px 11px;border-radius:8px;
+        background:var(--sunken);border:1px dashed var(--line-2);
+        font:500 12.5px/1.45 var(--sans);color:var(--ink-2);}
+/* Every row states what pressing it does. Without scroll doing it for them,
+   the affordance has to be on the thing itself. */
+.showme{font:600 11.5px var(--sans);color:var(--accent-ink,#2f6df6);opacity:0;
+        transition:opacity .12s ease;white-space:nowrap;}
+.prob-head:hover .showme,.prob[data-open="true"] .showme{opacity:1;}
+.prob .ct{margin-left:auto;}
+
+.nofix{margin:0 0 11px;padding:9px 11px;border-radius:8px;background:var(--sunken);
+       font:400 12.5px/1.5 var(--sans);color:var(--ink-2);}
+.nofix b{font-weight:600;color:var(--ink);}
+
+.overrideall:disabled{background:var(--sunken);color:var(--faint);
+                      border-color:var(--line);cursor:default;}
+
+.sec{padding:15px 18px 3px;background:var(--surface);}
+.sec + .prob{border-top:0;}
+.sec-head{display:flex;align-items:center;gap:8px;}
+.sec-t{font:700 11px var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);}
+.sec-n{font:700 10.5px var(--sans);color:var(--surface);background:var(--ink-2);
+       border-radius:20px;padding:2px 7px;}
+.sec-b{margin:5px 0 0;font:400 12px/1.5 var(--sans);color:var(--muted);}
+.sec.ours{border-top:1px solid var(--line);}
+.sec.theirs{border-top:8px solid var(--sunken);margin-top:6px;}
+.sec.ours .sec-n{background:var(--ok-edge);}
+
+.sec{padding:15px 18px 12px;background:var(--surface);}
+.sec-head{display:flex;align-items:center;gap:8px;}
+.sec-t{font:700 11px var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);}
+.sec-n{font:700 10.5px var(--sans);color:var(--surface);background:var(--ink-2);
+       border-radius:20px;padding:2px 7px;}
+.sec-b{margin:5px 0 0;font:400 12px/1.5 var(--sans);color:var(--muted);}
+.sec.ours{border-top:1px solid var(--line);}
+.sec.ours .sec-n{background:var(--ok-edge);}
+/* A visible break: below here nothing has a button we can press for them. */
+.sec.theirs{border-top:1px solid var(--line);}
+/* The heavy rule separates two lists; with only one it was a stray band. */
+/* Two different jobs deserve a break you cannot miss, not a hairline. */
+.sec.theirs.split{border-top:0;margin-top:24px;position:relative;padding-top:28px;}
+.sec.theirs.split:before{content:'';position:absolute;left:0;right:0;top:0;height:10px;
+  background:var(--sunken);box-shadow:inset 0 1px 0 var(--line),inset 0 -1px 0 var(--line);}
+.sec .bulk{margin-top:11px;}
+.sec #bulkreasons{margin-top:8px;}
+
+.sec-head .grow{flex:1;}
+.sec-n.ok{background:var(--ok-edge);}
+.undoall{border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);
+         border-radius:7px;padding:5px 10px;font:600 11.5px var(--sans);cursor:pointer;}
+.undoall:hover{background:var(--sunken);}
+.mended{list-style:none;margin:9px 0 0;padding:0;}
+.mended li{display:flex;align-items:center;gap:8px;padding:5px 0;
+           font:500 12.5px var(--sans);color:var(--ink-2);}
+.mended li:before{content:'✓';color:var(--ok-edge);font-weight:700;}
+.mended li span{margin-left:auto;font:500 11.5px var(--sans);color:var(--muted);}
+.sec.fixed{background:#f4faf6;border-top:1px solid var(--line);}
+
+/* The account sits at the foot of the rail, where Wren puts it. `margin-top:auto`
+   rather than a fixed offset, so it stays anchored whatever the rail holds. */
+.rail .acct{margin-top:auto;width:26px;height:26px;border-radius:50%;
+            background:#c9b8d8;cursor:pointer;flex:none;}
+
+/* The way out of a section that has nothing we can press for them. */
+.editall{width:100%;margin-top:11px;background:var(--surface);color:var(--ink);
+         border:1px solid var(--line-2);border-radius:8px;padding:9px 12px;
+         font:600 13px var(--sans);cursor:pointer;}
+.editall:hover{background:var(--sunken);}
+
+/* Where you are in the send, and what comes next. Wren shows Draft › Publish;
+   the check sits between them, so it belongs in the same indicator rather than
+   arriving unannounced. A completed step is a link back. */
+.steps{display:flex;align-items:center;gap:9px;}
+.steps a,.steps span.step{display:flex;align-items:center;gap:6px;
+  font:500 13.5px var(--sans);color:var(--muted);text-decoration:none;}
+.steps a:hover{color:var(--ink);}
+.steps .d{width:9px;height:9px;border-radius:50%;background:var(--line-2);}
+.steps .done .d{background:var(--ink-2);}
+.steps .now{color:var(--ink);font-weight:600;}
+.steps .now .d{background:var(--ink);box-shadow:0 0 0 3px rgba(22,24,29,.12);}
+.steps .sep{color:var(--faint);}
+
+/* Wayfinding sits with the title, where reading starts - not in the corner by
+   the account menu. The current step is filled, not merely bolder.
+
+   Teal, not black: black is the primary action on every one of these screens
+   (Fix all, Continue, Send), so a black pill reads as something to press. This
+   is a status, and it borrows the template's own colour to say "you are here".
+   The element+class selectors are needed to outrank the muted default. */
+.top .steps{margin-left:8px;}
+.steps span.step.now{background:var(--teal, #218b95);color:#fff;font-weight:600;
+                     border-radius:999px;padding:4px 13px 4px 10px;}
+.steps span.step.now .d{background:#fff;box-shadow:none;}
+.steps a.done{color:var(--ink-2);}
+.steps a.done .d{background:var(--teal, #218b95);}
+.steps a{padding:4px 2px;}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="rail"><span class="logo">W</span>
+    <i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i>
+    <span class="acct" title="Your account"></span></nav>
+
+  <div class="main">
+    <div class="top">
+      <button class="back" onclick="location.href='/editor'" title="Back to the editor">←</button>
+      <h1>Review before sending</h1>
+      <span class="steps">
+        <a class="done" href="/editor"><span class="d"></span>Draft</a>
+        <span class="sep">›</span>
+        <span class="step now"><span class="d"></span>Check</span>
+        <span class="sep">›</span>
+        <a href="/publish"><span class="d"></span>Publish</a>
+      </span>
+      <span class="grow"></span>
+      <span class="who"></span>
+      <span class="kebab">⋮</span>
+    </div>
+
+    <div class="work">
+      <div class="canvas">
+        <div class="stagebar">
+          <span class="vb-label">Viewing as</span>
+          <div class="seg" role="group" aria-label="Preview as">
+            <button id="mLight" aria-pressed="true">☀ Light</button>
+            <button id="mDark" aria-pressed="false">🌙 Dark screen</button>
+          </div>
+
+        </div>
+        <div class="stage" id="stage">
+          <iframe id="pv" sandbox="allow-same-origin" title="Your broadcast"></iframe>
+        </div>
+      </div>
+
+      <aside>
+        <div class="phead">
+          <div class="h"><h2 id="ptitle">Checking this broadcast…</h2></div>
+          <p class="sub" id="psub">Looking at how it will land in real inboxes.</p>
+
+        </div>
+        <div class="pbody" id="pbody"><p class="empty">Loading your broadcast…</p></div>
+      </aside>
+    </div>
+
+    <div class="foot">
+      <span class="mini">🕘 Version History</span>
+      <span style="font:400 11px var(--sans);color:var(--faint)" title="Wren is a fictional newsletter platform, invented so this check can be judged where it would sit.">Wren is a fictional platform &middot; a plausible host for the check</span>
+      <span class="mini saved">☁ Saved</span>
+      <span class="grow"></span>
+      <span class="gate" id="gate"></span>
+      <button class="cont" id="cont">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => (s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const kid = f => f.code + '~' + f.target;
+const pairOf = k => k.split('~');
+
+/* The creator's untouched draft plus the repairs they accepted. Every render
+   recomputes from the draft, so undoing one repair cannot disturb another. */
+/* The subject and preview line are not in the document, so every audit has to
+   be told them - including the ones that run after a repair. */
+const SUBJECT = 'The launch is live';
+const PREHEADER = '';
+let draft = '', html = '';
+let accepted = new Set(), waved = new Map();
+let report = null, ordered = [], current = null, settling = false;
+let repaired = new Map();   // code -> {title, places, keys} for what we mended
+let shownAt = new Map();
+const since = k => shownAt.has(k) ? (Date.now() - shownAt.get(k)) / 1000 : null;
+
+const REASONS = [['INTENTIONAL_DESIGN','I meant it this way'],
+                 ['FALSE_ALARM','This is flagged wrongly'],
+                 ['FIX_LATER','I will fix it later']];
+/* What each problem is called, in a creator's words. The engine's codes -
+   darkmode.no_bg_override - are the wrong register for the person who wrote
+   the email; the code still travels underneath for the telemetry. */
+const TITLES = {
+  'subject.too_long':           'Subject cut off on phones',
+  'preheader.missing':          'No preview text',
+  'link.vague_text':            'Link text says nothing',
+  'liquid.unparsed':            'Unclosed personalisation tag',
+  'liquid.unclosed_block':      'Unclosed Liquid block',
+  'contrast.aa_fail':           'Text too light to read',
+  'contrast.aaa_fail':          'Could be crisper',
+  'darkmode.no_bg_override':    'Disappears in dark mode',
+  'darkmode.unsafe_override':   'Recoloured without a surface',
+  'img.missing_alt':            'Image has no description',
+  'img.filename_alt':           'Description is just a filename',
+  'link.broken':                'Broken link',
+  'link.empty_href':            'Link points nowhere',
+  'link.bare_url':              'Raw URL in the copy',
+  'spam.link_ratio':            'Dense link-to-copy ratio',
+  'deliverability.image_heavy': 'Image-heavy with thin copy',
+  'cta.buried':                 'Call to action below the fold',
+  'cta.weak_prominence':        'Call to action is easy to miss',
+  'spam.trigger_phrase':        'Phrasing filters weight',
+  'copy.cognitive_friction':    'Unclear ask',
+};
+const title = c => TITLES[c] || c;
+
+const SEV_NAME = {will_break:'Will break', will_embarrass:'Will embarrass',
+                  could_be_better:'Polish'};
+
+/* What it costs them, stated as an outcome. Every line is grounded in what the
+   check actually found - none of it asserts a number we cannot support, which
+   is why the spam lines say what filters weight rather than scoring them. */
+const IMPACT = {
+  'darkmode.no_bg_override':
+    'Readers on a dark screen see <b>a blank space</b> where this sits. Roughly half your list opens email that way.',
+  'darkmode.unsafe_override':
+    'This is pinned so hard that dark-mode clients <b>repaint around it</b>, leaving text stranded on the wrong background.',
+  'contrast.aa_fail':
+    'On a phone, in sunlight, or with tired eyes this is <b>hard enough to read that people skip it</b>.',
+  'contrast.aaa_fail':
+    'Readable as it stands. Slightly crisper would hold a tired reader a little longer.',
+  'link.broken':
+    'This link <b>goes nowhere</b>. Anyone who clicks lands on an error page, and most of them do not come back and try again.',
+  'link.empty_href':
+    'This link <b>does not point anywhere at all</b>. Clicking it does nothing, which reads as a broken email.',
+  'link.vague_text':
+    '“Click here” tells a reader <b>nothing about where they are going</b>, so fewer of them go.',
+  'link.bare_url':
+    'A raw URL in the body <b>looks like machine output</b> next to your writing, and long ones wrap badly on phones.',
+  'img.missing_alt':
+    'Screen readers <b>skip this entirely</b>, and the many clients that block images by default show a blank gap instead.',
+  'img.filename_alt':
+    'The description is the filename, so anyone who cannot see the image <b>learns nothing from it</b>.',
+  'cta.buried':
+    'Readers who skim <b>stop before they reach your button</b>. The offer is there; most of them never see it.',
+  'cta.weak_prominence':
+    'Your main action <b>does not read as something to press</b>, so it gets passed over.',
+  'spam.trigger_phrase':
+    'This is phrasing spam filters are known to weight. We <b>cannot tell you what any one filter will do</b> — but it is a needless risk on a send you cannot recall.',
+  'spam.link_ratio':
+    'A high link-to-text ratio is another signal filters weight. <b>No score is knowable from the HTML</b>; this is only a flag.',
+  'deliverability.image_heavy':
+    'Mostly image, little text. Clients that block images show <b>an almost empty email</b>.',
+  'liquid.unparsed':
+    'Subscribers see the <b>raw tag instead of their name</b>. This is the one that generates replies.',
+  'liquid.unclosed_block':
+    'An unclosed tag can <b>swallow the rest of the email</b> for every subscriber.',
+  'preheader.missing':
+    'The inbox preview line falls back to your first sentence — <b>your opener is doing a job you did not write it for</b>.',
+  'subject.too_long':
+    'Phones cut this off, so <b>the end of your subject line never gets read</b>.',
+  'copy.cognitive_friction':
+    'Readers have to work to follow this, and in an inbox <b>they mostly do not bother</b>.',
+};
+const impactOf = f => IMPACT[f.code] || esc(f.message);
+
+/* Why some things have no Fix button.
+
+   Three of these are the product being deliberate, not incapable: we cannot
+   invent a URL, and we do not rewrite a creator's words - their voice is the
+   product. Saying nothing made that read as "we will not help you", so each one
+   states its reason and offers the thing we can do, which is take them to it. */
+const NO_FIX = {
+  'link.broken':
+    'We cannot guess the right address — only you know where this was meant to go.',
+  'link.empty_href':
+    'We cannot guess the right address — only you know where this was meant to point.',
+  'link.vague_text':
+    'This is your writing. We will flag it; we will not rewrite your words.',
+  'preheader.missing':
+    'Only you know what this email should promise in the inbox, so this line stays yours.',
+  'contrast.aaa_fail':
+    'AAA is a stretch target, not a requirement. This one is optional, so we leave it to you.',
+  'cta.buried':
+    'Moving your call to action is an editorial decision, and it is yours to make.',
+  'cta.weak_prominence':
+    'How prominent your call to action should be is a judgement about your email, not a defect.',
+  'spam.trigger_phrase':
+    'This is your copy. We will point at the phrasing; the wording stays yours.',
+  'copy.cognitive_friction':
+    'This is your writing, so the rewrite is yours.',
+  'spam.link_ratio':
+    'Which links to keep is an editorial call, so we will not drop any for you.',
+  'deliverability.image_heavy':
+    'Adding copy is writing, and that is yours.',
+};
+
+async function post(url, body){
+  const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'},
+                             body: JSON.stringify(body)});
+  const d = await r.json().catch(() => ({detail:'bad response'}));
+  if (!r.ok) throw new Error(d.detail || ('HTTP ' + r.status));
+  return d;
+}
+function resolveAction(action, extra){
+  post('/api/resolve', Object.assign({action, doc:(report && report.doc) || '',
+                                      verdict_at_audit:'HOLD'}, extra || {})).catch(()=>{});
+}
+
+/* ---------- load + recompute ---------- */
+/* Decisions outlive the page.
+
+   Everything lived in memory, so a reload - or a trip to the editor and back -
+   silently discarded every repair. That is the worst failure this product can
+   have: a creator returns, sees a familiar screen, and sends the *unfixed*
+   version believing it was mended. The document is derived from draft +
+   accepted, so storing the choices is enough to rebuild it. */
+const STATE_KEY = 'lc_state';
+
+function persist(){
+  try {
+    sessionStorage.setItem(STATE_KEY, JSON.stringify({
+      accepted: [...accepted],
+      waved: [...waved.entries()],
+      repaired: [...repaired.entries()],
+    }));
+  } catch { /* a full or blocked store must never break the check */ }
+}
+
+function restore(){
+  try {
+    const d = JSON.parse(sessionStorage.getItem(STATE_KEY) || 'null');
+    if (!d) return false;
+    accepted = new Set(d.accepted || []);
+    waved = new Map(d.waved || []);
+    repaired = new Map(d.repaired || []);
+    return accepted.size > 0 || waved.size > 0;
+  } catch { return false; }
+}
+
+async function boot(){
+  draft = await (await fetch('/api/starter')).text();
+  html = draft;
+  // Rebuild the repaired document rather than showing them the original again.
+  if (restore() && accepted.size){ await recompute(); return; }
+  await run();
+}
+async function run(){
+  const d = await post('/api/audit', {html, skip_llm:true, check_links:true,
+                                      subject: SUBJECT, preheader: PREHEADER});
+  paint(d);
+}
+async function recompute(){
+  $('#psub').textContent = 'Applying…';
+  // The envelope lines travel with every re-audit. Without them a fix made
+  // "No preview text" vanish rather than resolve it.
+  const d = await post('/api/apply', {html: draft, keys:[...accepted].map(pairOf),
+                                      check_links:true, subject: SUBJECT, preheader: PREHEADER});
+  html = d.fixed_html || draft;
+  persist();
+  paint(d.report);
+}
+
+function paint(r){
+  report = r;
+  r.findings.forEach(f => { const k = kid(f); if (!shownAt.has(k)) shownAt.set(k, Date.now()); });
+  // srcdoc into a frame with no `allow-scripts`: the document renders and
+  // cannot run. Marking happens on its load event.
+  $('#pv').srcdoc = (mode === 'dark' ? DARK_SHIM : '') + html;
+  renderHead();
+}
+
+/* ---------- the map ---------- */
+const live = () => report.findings.filter(f => !waved.has(kid(f)));
+let marked = [];
+let mode = 'light';
+const DARK_SHIM = `<style id="lc-dark">
+  html{color-scheme:dark;}
+  html,body{background:#1a1a1a !important;padding:26px 0 70px;margin:0;}
+</style>`;
+const frameDoc = () => { try { return document.getElementById('pv').contentDocument; }
+                         catch { return null; } };
+
+/* How a problem reads on the page.
+
+   Not a box and not a selection: a rectangle says "this element is chosen" and
+   a dashed edge says "this is editable", and both are the wrong signal on
+   someone's own writing. This is a marker pen - a wash of colour with a
+   weighted rule under it, the way a proof-reader marks a page. The current one
+   deepens and gains a soft halo with no hard edge anywhere, so attention moves
+   without anything ever looking like it is being edited. */
+/* Light preview only. In dark mode we must paint nothing: a client repaints
+   whatever the email left unpainted, and painting it ourselves would hide the
+   exact failure the creator is here to see. */
+const SURFACE_CSS = `
+body{margin:0;background:#f3f4f6;padding:26px 0 70px;}
+.wrap,body > table{background:#fff;border-radius:10px;
+  box-shadow:0 1px 3px rgba(22,24,29,.09),0 8px 24px rgba(22,24,29,.05);}
+`;
+const MARK_CSS = `
+.lc-hl{cursor:pointer;border-radius:4px;padding:1px 3px;margin:0 -3px;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+  transition:background-color .2s ease, box-shadow .2s ease;}
+/* Other places the same problem occurs: a whisper, so "18 places" is something
+   you can see rather than a number you are told. */
+.lc-echo.lc-will_break{background-color:rgba(214,69,69,.10);}
+.lc-echo.lc-will_embarrass{background-color:rgba(201,154,46,.12);}
+.lc-echo.lc-could_be_better{background-color:rgba(33,139,149,.09);}
+/* The passage being explained. A marker pen with a weighted rule beneath it -
+   an annotation, never a selection box and never a dashed editable edge. */
+.lc-lead.lc-will_break{background-color:rgba(214,69,69,.26);
+  box-shadow:inset 0 -2px 0 rgba(214,69,69,.92), 0 0 0 7px rgba(214,69,69,.10);}
+.lc-lead.lc-will_embarrass{background-color:rgba(201,154,46,.32);
+  box-shadow:inset 0 -2px 0 rgba(201,154,46,.95), 0 0 0 7px rgba(201,154,46,.12);}
+.lc-lead.lc-could_be_better{background-color:rgba(33,139,149,.24);
+  box-shadow:inset 0 -2px 0 rgba(33,139,149,.9), 0 0 0 7px rgba(33,139,149,.10);}
+
+`;
+
+/* Marked inside the frame, so there is no layer over the words to swallow the
+   scroll wheel. Repeats of one problem carry the first one's key, so selecting
+   a problem lights every place it occurs. */
+/* One index, built from the document itself.
+
+   Two things were wrong before, and both came from this being derived ad hoc in
+   three places. The engine emits findings grouped by check, not by position, so
+   numbering them in arrival order put an issue on the first line of the email
+   at number five. And an element can carry more than one finding - the kicker
+   is both unpainted for dark mode and short of AAA contrast - so storing a
+   single key per element meant the last one written won, and the passage lit
+   was not the passage the panel was describing.
+
+   So: walk the DOM for real order, let an element hold every finding on it, and
+   identify a problem by its code, which is what "problem" has meant all along. */
+function buildIndex(doc){
+  const byEl = new Map();
+  for (const f of live()){
+    if (!f.selector) continue;
+    let el = null; try { el = doc.querySelector(f.selector); } catch {}
+    if (!el) continue;
+    if (!byEl.has(el)) byEl.set(el, []);
+    byEl.get(el).push(f);
+  }
+  // querySelectorAll returns document order, which is the only order a creator
+  // reading their own email would recognise.
+  marked = [...doc.querySelectorAll('*')]
+    .filter(el => byEl.has(el))
+    .map(el => ({el, findings: byEl.get(el)}));
+
+  // Every problem, including the ones with nowhere to point. A missing preview
+  // line is not attached to any passage, and dropping it because it cannot be
+  // highlighted would hide a real problem behind a presentation detail.
+  const probs = new Map();
+  const pos = new Map();
+  marked.forEach((m, i) => m.findings.forEach(f => {
+    if (!pos.has(f.code)) pos.set(f.code, i);
+  }));
+  for (const f of live()){
+    if (!probs.has(f.code)) probs.set(f.code, {f, items: [], els: []});
+    probs.get(f.code).items.push(f);
+  }
+  for (const m of marked)
+    for (const f of m.findings) probs.get(f.code).els.push(m.el);
+
+  // Numbered by where each first occurs; anything with no place on the page
+  // sorts to the end rather than claiming a position it does not have.
+  ordered = [...probs.values()]
+    .sort((a, b) => (pos.has(a.f.code) ? pos.get(a.f.code) : 1e9) -
+                    (pos.has(b.f.code) ? pos.get(b.f.code) : 1e9));
+  ordered.forEach((g, i) => g.n = i + 1);
+}
+
+const RANK = {will_break: 0, will_embarrass: 1, could_be_better: 2};
+const worst = fs => fs.slice().sort((a, b) => RANK[a.severity] - RANK[b.severity])[0];
+const groupOf = code => ordered.find(g => g.f.code === code);
+
+function markUp(){
+  const doc = frameDoc();
+  if (!doc || !doc.body) return;
+  if (!doc.getElementById('lc-style')){
+    const tag = doc.createElement('style');
+    tag.id = 'lc-style';
+    tag.textContent = (mode === 'dark' ? '' : SURFACE_CSS) + MARK_CSS;
+    (doc.head || doc.body).appendChild(tag);
+  }
+  doc.querySelectorAll('.lc-hl').forEach(el => {
+    el.classList.remove('lc-hl','lc-echo','lc-lead','lc-pass',
+                        'lc-will_break','lc-will_embarrass','lc-could_be_better');
+    delete el.dataset.codes; delete el.dataset.sev;
+  });
+
+  buildIndex(doc);
+  for (const m of marked){
+    m.el.classList.add('lc-hl');
+    // Every problem on this element, so nothing overwrites anything.
+    m.el.dataset.codes = m.findings.map(f => f.code).join(' ');
+    m.el.dataset.sev = worst(m.findings).severity;
+  }
+
+  doc.querySelectorAll('.lc-hl').forEach(el => {
+    const codes = (el.dataset.codes || '').split(' ').filter(Boolean);
+    if (!codes.length) return;
+    // Several problems can share an element; the most serious one answers a click.
+    const pick = () => codes.slice().sort((a, b) =>
+      RANK[groupOf(a).f.severity] - RANK[groupOf(b).f.severity])[0];
+    el.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); select(pick(), false); });
+  });
+
+  if (current && !groupOf(current)) current = null;
+  light(current);
+  renderIssue();
+}
+
+/* Pointing at one side lights the other. Hovering previews the selection
+   without changing it, so leaving returns to what is selected. */
+function hover(code){
+  light(code || current);
+  document.querySelectorAll('.prob').forEach(r =>
+    r.classList.toggle('hot', !!code && r.dataset.code === code));
+}
+
+/* Exactly one problem is lit. Every place it occurs carries a whisper of its
+   colour so its reach is visible; its first occurrence carries the full mark. */
+function light(code){
+  const doc = frameDoc();
+  if (!doc) return;
+  const g = code ? groupOf(code) : null;
+  const lead = g ? g.els[0] : null;
+  for (const m of marked){
+    const on = !!code && m.findings.some(f => f.code === code);
+    m.el.classList.toggle('lc-echo', on);
+    m.el.classList.toggle('lc-lead', on && m.el === lead);
+    const sev = g ? g.f.severity : null;
+    for (const s of ['will_break','will_embarrass','could_be_better'])
+      m.el.classList.toggle('lc-' + s, on && sev === s);
+  }
+}
+
+function select(code, scrollTo){
+  current = code;
+  light(code);
+  renderIssue();
+  if (scrollTo){
+    const g = groupOf(code);
+    if (g && g.els.length) g.els[0].scrollIntoView({block: 'center', behavior: 'smooth'});
+  }
+}
+const reveal = code => select(code, true);
+
+/* ---------- panel ---------- */
+function renderHead(){
+  const l = live();
+  const blocking = l.filter(f => f.severity !== 'could_be_better');
+  const fixable = l.filter(f => f.fixable_now && !accepted.has(kid(f)));
+  const ex = report.examined || {};
+
+  if (!l.length){
+    $('#ptitle').innerHTML = 'Ready to send <span class="chip ready">Ready</span>';
+    $('#psub').textContent = ex.checks
+      ? `Checked ${ex.checks} ways across ${ex.elements} elements, ${ex.links} links and ${ex.images} images.`
+      : 'Nothing here will break or embarrass you.';
+  } else {
+    // Eighteen instances of one problem is one thing to understand.
+    const kinds = [...new Set(l.map(f => f.code))];
+    const sevOf = c => l.find(f => f.code === c).severity;
+    const nBreak = kinds.filter(c => sevOf(c) === 'will_break').length;
+    const nEmb   = kinds.filter(c => sevOf(c) === 'will_embarrass').length;
+    const nPol   = kinds.filter(c => sevOf(c) === 'could_be_better').length;
+    $('#ptitle').textContent =
+      `${kinds.length} thing${kinds.length === 1 ? '' : 's'} to look at`;
+    // Graded by consequence, never by engine severity - the creator needs to
+    // know whether anything here actually breaks before they read a word.
+    $('#psub').innerHTML = [
+      nBreak ? `<b style="color:#9b2c2c">${nBreak} will break</b>` : '',
+      nEmb   ? `<b style="color:#8a6212">${nEmb} will embarrass you</b>` : '',
+      nPol   ? `${nPol} could be better` : '',
+    ].filter(Boolean).join(' · ') +
+      `<span class="prompt">👆 Click any issue below to see exactly where it is in your email</span>`;
+  }
+
+  const cont = $('#cont'), gate = $('#gate');
+  if (blocking.length){
+    const kinds = new Set(blocking.map(f => f.code)).size;
+    cont.className = 'cont risky'; cont.textContent = 'Send anyway →';
+    gate.innerHTML = `<b>${kinds} unresolved</b> · you can still send`;
+  } else {
+    cont.className = 'cont'; cont.textContent = 'Continue →'; gate.textContent = '';
+  }
+  renderIssue();
+}
+
+/* Every problem, listed, tagged and counted - with the one you are on opened.
+
+   The stepper this replaces could say "2 of 6" but never what the other four
+   were or where they lived, so the only way to find out was to click through
+   them one at a time. A list answers "what is wrong with this email" at a
+   glance, and scrolling still opens whichever one you have reached. */
+function renderIssue(){
+  try { renderProblems(); }
+  catch (err){
+    // An exception here used to leave the list blank with no explanation, which
+    // is indistinguishable from "there is nothing wrong with your email".
+    console.error('Launch Check: could not render the problem list', err);
+    $('#pbody').innerHTML = `<p class="empty" style="padding:18px">Something went wrong
+      showing these. Your broadcast was still checked — reload to try again.</p>`;
+  }
+}
+
+function renderProblems(){
+  const body = $('#pbody');
+  if (!ordered.length){
+    body.innerHTML = `<p class="empty" style="padding:18px">Every surface, link, image and tag
+      checked out. Nothing here needs your attention.</p>`;
+    return;
+  }
+
+  /* Two lists, because they are two different jobs.
+
+     What we can repair is one decision, made in bulk, then stopped thinking
+     about. What only the creator can repair is work - a link whose right address
+     only they know, words only they should write - done one at a time. Mixing
+     them made every row look like it might have a button when half did not, and
+     put a "Fix all" above findings it could never touch. */
+  const ours   = ordered.filter(g => g.f.fixable);
+  const theirs = ordered.filter(g => !g.f.fixable);
+  [...ours, ...theirs].forEach((g, i) => g.n = i + 1);
+
+  const openIn = rows => rows.flatMap(g =>
+    g.items.filter(x => x.fixable_now && !accepted.has(kid(x))).map(kid));
+  const liveIn = rows => rows.flatMap(g => g.items.map(kid));
+
+  const oursOpen = openIn(ours);
+  const oursAll  = liveIn(ours);
+  const settled  = ours.length && !oursOpen.length;
+
+  // What we mended, kept in view. A repair the creator cannot see and cannot
+  // reverse is indistinguishable from us having quietly changed their email.
+  const mended = [...repaired.values()];
+  const places = mended.reduce((n, r) => n + r.places, 0);
+
+  body.innerHTML = '<div class="probs">'
+    + (mended.length ? `
+      <div class="sec fixed">
+        <div class="sec-head"><span class="sec-t">✓ Fixed</span>
+          <span class="sec-n ok">${mended.length}</span>
+          <span class="grow"></span>
+          <button class="undoall" data-act="undo-all">Undo all</button></div>
+        <p class="sec-b">${places} place${places === 1 ? '' : 's'} repaired.
+          Nothing was written to your stylesheet.</p>
+        <ul class="mended">${mended.map(r =>
+          `<li>${esc(r.title)}<span>${r.places > 1 ? r.places + ' places' : 'fixed'}</span></li>`).join('')}</ul>
+      </div>` : '')
+    + (ours.length ? `
+      <div class="sec ours">
+        <div class="sec-head"><span class="sec-t">We can fix these</span>
+          <span class="sec-n">${ours.length}</span></div>
+        <p class="sec-b">Reversible, and never touching your stylesheet without you asking.</p>
+        <div class="bulk">
+          <button class="fixall" data-act="fix-all-ours" data-keys="${esc(oursOpen.join('|'))}"
+                  ${oursOpen.length ? '' : 'disabled'}>
+            ${oursOpen.length ? `⚡ Fix all ${oursOpen.length} safely`
+                              : (settled ? '✓ All safe repairs applied' : 'Nothing to fix here')}</button>
+          <button class="overrideall" data-act="override-all-open"
+                  ${oursAll.length ? '' : 'disabled'}>Override all</button>
+        </div>
+        <div class="reasons" id="bulkreasons" hidden>${REASONS.map(([c, lab]) =>
+          `<button data-act="override-all" data-reason="${c}"
+                   data-keys="${esc(oursAll.join('|'))}">${esc(lab)} — for all ${ours.length}</button>`).join('')}</div>
+      </div>` : '')
+    + ours.map(row).join('')
+    + (theirs.length ? `
+      <div class="sec theirs${ours.length ? ' split' : ''}">
+        <div class="sec-head"><span class="sec-t">These need you</span>
+          <span class="sec-n">${theirs.length}</span></div>
+        <p class="sec-b">Your links and your words — we cannot write them for you.
+          We will show you where each one is, and take you to the editor to change it.</p>
+        <button class="editall" data-act="edit-all"
+                data-codes="${esc(theirs.map(g => g.f.code).join('|'))}">
+          ✎ Fix all ${theirs.length} in the editor</button>
+      </div>` : '')
+    + theirs.map(row).join('')
+    + '</div>';
+  wireIssue();
+
+  function row(g){
+    const f = g.f, code = f.code, open = current === code;
+    const openKeys = g.items.filter(x => x.fixable_now && !accepted.has(kid(x))).map(kid);
+    const allKeys  = g.items.map(kid);
+    const done = g.items.every(x => accepted.has(kid(x)));
+    return `<div class="prob ${f.severity}${done ? ' done' : ''}" data-code="${esc(code)}" data-open="${open}">
+      <div class="prob-head" data-open-code="${esc(code)}">
+        <span class="num">${g.n}</span>
+        <span class="nm">${done ? '✓ ' : ''}${esc(title(code))}</span>
+        <span class="ct">${!g.els.length ? 'Whole email'
+          : g.items.length > 1 ? g.items.length + ' places' : SEV_NAME[f.severity]}</span>
+        <span class="caret">${open ? '▲' : '▼'}</span>
+      </div>
+      ${open ? `<div class="prob-body">
+        <p class="impact">${impactOf(f)}</p>
+        ${!f.fixable && NO_FIX[code]
+          ? `<p class="nofix"><b>Yours to change.</b> ${esc(NO_FIX[code])}</p>` : ''}
+        <div class="acts">
+          ${openKeys.length
+            ? `<button class="a primary" data-act="fix-group" data-keys="${esc(openKeys.join('|'))}">
+                 Fix ${openKeys.length > 1 ? 'all ' + openKeys.length : 'it'}</button>` : ''}
+          ${!f.fixable && g.els.length
+            ? `<button class="a primary" data-act="edit-one" data-code="${esc(code)}">✎ Fix in editor</button>` : ''}
+          ${done ? `<button class="a done" data-act="undo-group" data-keys="${esc(allKeys.join('|'))}">↩ Undo</button>` : ''}
+          ${!done ? `<button class="a" data-act="wave-open" data-code="${esc(code)}"
+                       style="flex:1;min-width:104px">Override ▾</button>` : ''}
+        </div>
+        <div class="reasons" data-reasons="${esc(code)}" hidden>${REASONS.map(([c, lab]) =>
+          `<button data-act="wave-group" data-reason="${c}"
+                   data-keys="${esc(allKeys.join('|'))}">${esc(lab)}</button>`).join('')}</div>
+        ${code.startsWith('darkmode') ? `<button class="seeit" data-act="seedark">
+          <span class="moon">${mode === 'dark' ? '☀' : '🌙'}</span>
+          ${mode === 'dark' ? 'Back to a light screen' : 'See it on a dark screen'}</button>` : ''}
+        <details class="more">
+          <summary>View more</summary>
+          <div class="tech">
+            ${f.detail ? '<b>What we measured:</b> ' + esc(f.detail) + '<br><br>' : ''}
+            ${f.remedy ? '<b>What we would change:</b> ' + esc(f.remedy) + '<br><br>' : ''}
+            <b>Where:</b> ${g.items.map(x => '<code>' + esc(x.target || '?') + '</code>').join(', ')}
+            ${f.requires_aggressive
+              ? '<br><br>This one edits your stylesheet, so it is never applied without you asking.'
+              : ''}
+          </div>
+        </details>
+      </div>` : ''}
+    </div>`;
+  }
+}
+
+/* Captured before the repair, because afterwards the finding is gone. */
+function remember(keys){
+  for (const k of keys){
+    const [code] = pairOf(k);
+    const g = groupOf(code);
+    const rec = repaired.get(code) || {title: title(code), places: 0, keys: []};
+    rec.places += 1;
+    rec.keys.push(k);
+    if (g) rec.title = title(code);
+    repaired.set(code, rec);
+  }
+}
+
+function wireIssue(){
+  const body = $('#pbody');
+  body.querySelectorAll('[data-open-code]').forEach(h => {
+    const code = h.dataset.openCode;
+    h.onclick = () => select(code, true);
+    h.onmouseenter = () => hover(code);
+    h.onmouseleave = () => hover(null);
+  });
+  body.querySelectorAll('[data-act]').forEach(b => b.onclick = async ev => {
+    ev.stopPropagation();
+    const act = b.dataset.act;
+    const many = b.dataset.keys ? b.dataset.keys.split('|').filter(Boolean) : [];
+    const code = many.length ? pairOf(many[0])[0] : (b.dataset.code || '');
+
+    if (act === 'fix-group'){
+      resolveAction('AUTO_FIXED', {code, fixes_kept: many.length});
+      remember(many);
+      many.forEach(x => accepted.add(x));
+      await recompute();
+    }
+    else if (act === 'fix-all-ours'){
+      // Repairing one thing can surface another - darkening pale text can make
+      // it newly fail on a dark screen. That follow-on work is ours to absorb,
+      // not a second button press to ask for. Bounded, because a repair that
+      // keeps creating work is a bug and should stop rather than spin.
+      b.disabled = true; b.textContent = 'Fixing…';
+      settling = true;
+      let total = 0;
+      for (let pass = 0; pass < 4; pass++){
+        const add = live().filter(f => f.fixable_now && !accepted.has(kid(f))).map(kid);
+        if (!add.length) break;
+        remember(add);
+        add.forEach(k => accepted.add(k));
+        total += add.length;
+        await recompute();
+      }
+      settling = false;
+      resolveAction('AUTO_FIXED', {fixes_kept: total});
+      renderIssue();
+    }
+    else if (act === 'undo-group'){
+      many.forEach(x => accepted.delete(x));
+      repaired.delete(code);
+      await recompute();
+    }
+    else if (act === 'undo-all'){
+      const n = accepted.size;
+      accepted.clear(); repaired.clear();
+      resolveAction('MANUALLY_EDITED', {fixes_undone: n});
+      await recompute();
+    }
+    else if (act === 'goto'){ select(b.dataset.code, true); }
+    else if (act === 'edit-one' || act === 'edit-all'){
+      // Handing off, not overriding. Recorded as MANUALLY_EDITED so the
+      // override rate keeps meaning "they did not believe the verdict" rather
+      // than "they had nowhere to go" (D35).
+      const codes = act === 'edit-all'
+        ? b.dataset.codes.split('|').filter(Boolean)
+        : [b.dataset.code];
+      codes.forEach(c => resolveAction('MANUALLY_EDITED', {code: c}));
+      handOffToEditor(codes);
+    }
+    else if (act === 'seedark'){ setMode(mode === 'dark' ? 'light' : 'dark'); }
+    else if (act === 'wave-open'){
+      const box = body.querySelector(`[data-reasons="${CSS.escape(b.dataset.code)}"]`);
+      box.hidden = !box.hidden;
+      b.textContent = box.hidden ? 'Override ▾' : 'Override ▴';
+    }
+    else if (act === 'override-all-open'){
+      const box = body.querySelector('#bulkreasons');
+      box.hidden = !box.hidden;
+      b.textContent = box.hidden ? 'Override all' : 'Override all ▴';
+    }
+    else if (act === 'wave-group' || act === 'override-all'){
+      // One decision about one check, not N - N would inflate the dismissal
+      // rate the loop reads to decide whether a check is wrong (D35). The bulk
+      // form says the creator did not believe the verdict, which is a different
+      // claim from "this check is wrong", so it is recorded differently.
+      many.forEach(x => { waved.set(x, b.dataset.reason); accepted.delete(x); });
+      resolveAction(act === 'override-all' ? 'OVERRIDDEN' : 'DISMISSED',
+                    {code: act === 'override-all' ? '' : code, reason: b.dataset.reason});
+      current = null;
+      await recompute();
+    }
+  });
+  const open = body.querySelector('.prob[data-open="true"]');
+  if (open && !open.dataset.seen){ open.dataset.seen = '1'; open.scrollIntoView({block: 'nearest'}); }
+}
+
+/* Where the change actually gets made.
+
+   In Wren this returns the creator to the composer with the element selected.
+   Here the mock editor gets the same brief, so the shape of the handoff is
+   honest even though the prototype cannot select anything. What survives the
+   trip: the decisions already made, and what they were sent to change. */
+function handOffToEditor(codes){
+  try {
+    persist();
+    sessionStorage.setItem('lc_to_fix', JSON.stringify({
+      codes,
+      titles: codes.map(c => title(c)),
+      from: location.pathname,
+    }));
+  } catch {}
+  location.href = '/editor';
+}
+
+/* ---------- wiring ---------- */
+/* Only what the broadcast left unpainted goes dark - which is exactly the
+   condition darkmode.no_bg_override reports, so the fix is visibly effective. */
+function setMode(next){    // hoisted: the issue card calls this too
+  mode = next;
+  $('#mLight').setAttribute('aria-pressed', String(next === 'light'));
+  $('#mDark').setAttribute('aria-pressed', String(next === 'dark'));
+  $('#pv').srcdoc = (mode === 'dark' ? DARK_SHIM : '') + html;
+}
+$('#mLight').onclick = () => setMode('light');
+$('#mDark').onclick  = () => setMode('dark');
+
+/* Waving the whole send through, in one action.
+
+   Deliberately not the same event as dismissing one finding N times. A creator
+   who overrides everything is saying they do not believe the product; one who
+   dismisses a single check is saying that check is wrong. Only the second
+   should ever retire a rule, so this records one OVERRIDDEN - recording twenty
+   dismissals here would quietly retire every check we have (D35). */
+$('#cont').onclick = () => {
+  // The publish step reports this rather than auditing again; two screens
+  // checking the same document is how they ended up contradicting each other.
+  const l = live();
+  const blocking = l.filter(f => f.severity !== 'could_be_better');
+  const ex = (report && report.examined) || {};
+  try {
+    // Split by who could have resolved it. At the last irreversible moment,
+    // "three of these we could have repaired in one click" is the most useful
+    // sentence the product has - a flat count buries it.
+    const codes = c => new Set(blocking.filter(c).map(f => f.code)).size;
+    sessionStorage.setItem('lc_outcome', JSON.stringify({
+      unresolved: codes(() => true),
+      repairable: codes(f => f.fixable),
+      manual:     codes(f => !f.fixable),
+      polish:     new Set(l.filter(f => f.severity === 'could_be_better').map(f => f.code)).size,
+      fixed: [...repaired.values()].reduce((n, r) => n + r.places, 0),
+      checks: ex.checks || 0, elements: ex.elements || 0,
+      links: ex.links || 0, images: ex.images || 0,
+    }));
+  } catch {}
+  if (blocking.length) resolveAction('OVERRIDDEN', {reason: '', code: ''});
+  location.href = '/publish';
+};
+
+/* Nothing listens to the scroll. Reading the email and choosing what to work
+   on are separate acts: colour appears when a problem is picked, and stays put
+   while they read around it. */
+$('#pv').addEventListener('load', markUp);
+
+document.addEventListener('click', () => document.querySelectorAll('.menu').forEach(m => m.hidden = true));
+
+boot();
+</script>
+
+</body>
+</html>

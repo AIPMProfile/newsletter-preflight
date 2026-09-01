@@ -1,0 +1,38 @@
+[project]
+name = "preflight-agent"
+version = "0.1.0"
+description = "Pre-send visual quality, accessibility, and deliverability co-pilot for newsletter creators."
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "httpx>=0.27",
+    "google-genai>=2.0",
+    "python-dotenv>=1.0",
+    "pydantic>=2.7",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+# Anthropic is optional: Gemini is the default provider, and the adapter is kept
+# so `eval --live` can compare providers on one corpus. See PRODUCT_DECISIONS D17.
+anthropic = ["anthropic>=1.0"]
+web = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "anthropic>=1.0",
+       "fastapi>=0.115", "uvicorn[standard]>=0.30", "httpx>=0.27"]
+
+[project.scripts]
+preflight = "preflight.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/preflight"]
+
+[tool.hatch.build.targets.wheel.force-include]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning"]
