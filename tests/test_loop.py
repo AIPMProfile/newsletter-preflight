@@ -126,3 +126,38 @@ def test_every_proposal_names_a_signal_and_a_lever(severity):
             act("darkmode.no_bg_override", "AUTO_FIXED", None, 60, 24))
     p = next(x for x in loop.proposals(rows) if x["severity"] == severity)
     assert p["signal"] and p["reading"] and p["propose"]
+
+def test_the_rubric_sheet_covers_every_check_the_engine_can_emit():
+    """A check with no rubric is a check nobody can judge.
+
+    The rubrics live in a spreadsheet so the person who owns the definition can
+    change it without a deploy. That trade only holds if the sheet is kept
+    complete - a missing row turns a dismissal rate back into a bare number.
+    """
+    import re
+    from pathlib import Path
+    from typing import get_args
+
+    import preflight.checks.deterministic as det
+    import preflight.checks.links as links
+    from preflight.checks.llm_eval import LLMCode
+    from preflight.evals.rubrics import RUBRICS, RUBRIC_SHEET
+
+    assert RUBRIC_SHEET.exists(), "the rubric sheet is the source of truth and must ship"
+
+    source = "".join(Path(m.__file__).read_text() for m in (det, links))
+    engine = set(re.findall(r'code="([a-z]+\.[a-z_]+)"', source)) | set(get_args(LLMCode))
+
+    assert set(RUBRICS) <= engine, f"sheet defines checks that cannot fire: {sorted(set(RUBRICS) - engine)}"
+    assert engine <= set(RUBRICS), f"no rubric for: {sorted(engine - set(RUBRICS))}"
+
+
+def test_every_rubric_row_is_complete():
+    """Half a rubric is worse than none: it reads as defined and answers nothing."""
+    from preflight.evals.rubrics import RUBRICS
+
+    for code, r in RUBRICS.items():
+        assert r.good, f"{code}: no definition of a good finding"
+        assert r.bad, f"{code}: no definition of a bad one - the half that usually goes unwritten"
+        assert r.first_lever, f"{code}: no first lever if creators say it is wrong"
+        assert 1 <= r.decides_in <= 120, f"{code}: {r.decides_in}s is not a comprehension budget"

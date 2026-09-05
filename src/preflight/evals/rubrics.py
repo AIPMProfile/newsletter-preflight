@@ -27,7 +27,9 @@ proposal is written in.
 
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -41,145 +43,43 @@ class Rubric:
     first_lever: str
 
 
-RUBRICS: dict[str, Rubric] = {
-    "liquid.unparsed": Rubric(
-        good="A personalisation tag was left unclosed and will reach subscribers as "
-             "raw code where their name should be. Unambiguous, embarrassing, and "
-             "invisible in every preview a creator would think to run.",
-        bad="Firing on a stray brace inside ordinary copy, or inside a code sample "
-            "the creator is deliberately showing. Both read as us not understanding "
-            "their writing.",
-        decides_in=10,
-        first_lever="Tighten what counts as a tag opening before touching severity.",
-    ),
-    "liquid.unclosed_block": Rubric(
-        good="A conditional block was opened and never closed, so a section may "
-             "vanish or render raw depending on the sending engine.",
-        bad="Firing on a block closed by a variant spelling we do not recognise. "
-            "The creator sees a correct email being called broken.",
-        decides_in=15,
-        first_lever="Widen the recognised closing forms.",
-    ),
-    "link.broken": Rubric(
-        good="A link returns an error. Anyone who clicks reaches a dead end and the "
-             "email cannot be recalled to fix it.",
-        bad="Firing on a site that blocks automated requests, is briefly down, or "
-            "sits behind a login. The link is fine and we called it dead - the "
-            "fastest way to lose a creator's trust in every other finding.",
-        decides_in=15,
-        first_lever="Treat request-blocking responses as unknown rather than broken.",
-    ),
-    "link.empty_href": Rubric(
-        good="A button or link has no destination. Readers click it and nothing "
-             "happens, which wastes the one action the email was asking for.",
-        bad="Firing on an anchor used purely for layout, or one the editor has not "
-            "finished writing while the creator is mid-edit.",
-        decides_in=10,
-        first_lever="Ignore anchors with no visible text.",
-    ),
-    "contrast.aa_fail": Rubric(
-        good="Body copy a reader has to work to read - on a phone, in sunlight, at "
-             "the end of the day. The creator chose a colour without seeing it in "
-             "those conditions.",
-        bad="Firing on decorative or intentionally quiet text: a caption, a legal "
-            "line, a watermark. Technically below the threshold, deliberately so, "
-            "and telling the creator their design is broken when it is not.",
-        decides_in=20,
-        first_lever="Exempt small print by role before loosening the ratio.",
-    ),
-    "contrast.aaa_fail": Rubric(
-        good="A quiet note that a design already clearing the readable bar could go "
-             "further. Never blocks, never insists.",
-        bad="Appearing often enough to feel like nagging. This check earns its place "
-            "only while creators ignore it without irritation.",
-        decides_in=5,
-        first_lever="Stop reporting it at all if it accounts for most ignores.",
-    ),
-    "darkmode.no_bg_override": Rubric(
-        good="Text pinned to a colour with nothing painting behind it, so a client "
-             "forcing dark mode renders it invisible. Roughly half the audience sees "
-             "a blank space and the creator never finds out.",
-        bad="Firing on text that would survive the repaint anyway, or on a template "
-            "whose background is set somewhere we did not look. A creator seeing a "
-            "correct email flagged learns to skip the whole panel.",
-        decides_in=25,
-        first_lever="Widen where we look for a painted surface before changing tier.",
-    ),
-    "darkmode.unsafe_override": Rubric(
-        good="A dark-mode rule recolours text without recolouring what it sits on, "
-             "so the creator's own dark styling produces unreadable output.",
-        bad="Firing where the surface is painted by a rule we did not resolve. Same "
-            "cost as above and harder to explain.",
-        decides_in=25,
-        first_lever="Improve surface resolution inside media rules.",
-    ),
-    "img.missing_alt": Rubric(
-        good="An image carrying meaning has no description, so it is silent to "
-             "anyone using a screen reader and a blank gap wherever images are "
-             "blocked - which is most inboxes, by default.",
-        bad="Firing on spacers, dividers and tracking pixels. Nothing is lost when "
-            "those are silent, and asking a creator to describe a one-pixel image "
-            "makes the whole check look mechanical.",
-        decides_in=15,
-        first_lever="Exclude images below a size threshold and known spacer patterns.",
-    ),
-    "img.filename_alt": Rubric(
-        good="The description is the filename, which tells a reader nothing and "
-             "usually means it was filled in automatically.",
-        bad="Firing on a description that legitimately resembles a filename.",
-        decides_in=15,
-        first_lever="Require stronger filename evidence.",
-    ),
-    "link.bare_url": Rubric(
-        good="An address written out but not clickable, so readers have to copy it "
-             "by hand.",
-        bad="Firing where the address is shown deliberately - a domain the creator "
-            "is naming rather than linking.",
-        decides_in=10,
-        first_lever="Skip addresses inside quotes or code.",
-    ),
-    "link.vague_text": Rubric(
-        good="Link text carrying none of the promise - 'click here' beside a "
-             "sentence doing all the work. Costs the click, and reads as nothing to "
-             "anyone moving link to link.",
-        bad="Firing on short link text that is clear in context. This is a judgment "
-            "call and the check should stay advisory for exactly that reason.",
-        decides_in=15,
-        first_lever="Shrink the phrase list to the least defensible cases.",
-    ),
-    "subject.too_long": Rubric(
-        good="The point of the subject line falls past where a phone truncates, so "
-             "the part that earns the open is never seen.",
-        bad="Firing on a subject whose point lands early and simply runs long. The "
-            "length is not the problem; where the meaning sits is.",
-        decides_in=15,
-        first_lever="Judge where the meaning falls, not the character count.",
-    ),
-    "preheader.missing": Rubric(
-        good="No preview text, so the inbox fills that space with whatever the email "
-             "starts with - often an unsubscribe line.",
-        bad="Firing where the template supplies preview text somewhere we do not "
-            "read it.",
-        decides_in=10,
-        first_lever="Detect template-supplied preview text.",
-    ),
-    "spam.link_ratio": Rubric(
-        good="Dense linking with little writing between, which filters read as "
-             "promotional. The subscriber may never see the email at all.",
-        bad="Firing on a genuine link roundup, which is a legitimate and common "
-            "newsletter format. The creator knows what they are doing.",
-        decides_in=25,
-        first_lever="Recognise roundup formats before adjusting the ratio.",
-    ),
-    "deliverability.image_heavy": Rubric(
-        good="Mostly pictures with almost no writing - a spam signature, and empty "
-            "for anyone whose client blocks images.",
-        bad="Firing on a deliberately visual send from a creator whose whole format "
-            "is imagery.",
-        decides_in=25,
-        first_lever="Account for alt text as copy before adjusting the threshold.",
-    ),
-}
+#: The rubrics live in a spreadsheet, not in this file.
+#:
+#: A rubric is a product artefact - it defines what a good and a bad finding
+#: look like for a creator - so the person who owns that definition should be
+#: able to change it without opening Python or asking for a deploy. The CSV
+#: opens directly in Sheets or Excel, and this module reads it. Editing the code
+#: to change a rubric would put the definition back where nobody who needs it
+#: can reach it.
+RUBRIC_SHEET = Path(__file__).parent / "rubrics.csv"
+
+
+def _load(path: Path = RUBRIC_SHEET) -> dict[str, Rubric]:
+    """Read the rubric sheet. Loud on malformed rows, because a rubric that
+    silently fails to load looks exactly like a check nobody has defined."""
+    out: dict[str, Rubric] = {}
+    with path.open(encoding="utf-8", newline="") as fh:
+        for i, row in enumerate(csv.DictReader(fh), start=2):
+            code = (row.get("check") or "").strip()
+            if not code:
+                continue
+            try:
+                decides_in = int((row.get("seconds to decide") or "").strip())
+            except ValueError as exc:
+                raise ValueError(
+                    f"{path.name} row {i} ({code}): 'seconds to decide' must be a "
+                    f"whole number of seconds"
+                ) from exc
+            out[code] = Rubric(
+                good=(row.get("a good finding looks like") or "").strip(),
+                bad=(row.get("a bad finding looks like") or "").strip(),
+                decides_in=decides_in,
+                first_lever=(row.get("first lever if creators say it is wrong") or "").strip(),
+            )
+    return out
+
+
+RUBRICS: dict[str, Rubric] = _load()
 
 
 def rubric_for(code: str) -> Rubric | None:

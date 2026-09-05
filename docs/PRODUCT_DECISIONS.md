@@ -183,6 +183,16 @@ and send. A finding shown and ignored is the signal, so *ignored* is recorded as
 its own outcome.
 *Changes if:* creators start using the dismiss reasons at volume.
 
+**The rubrics live in a spreadsheet, not in the code.**
+`src/preflight/evals/rubrics.csv` — one row per check: what a good finding looks
+like, what a bad-but-technically-correct one looks like, how many seconds a
+creator should need to decide, and what we would change first if creators say
+the check is wrong. It opens in Sheets, and the code reads it. A rubric is the
+definition of *useful*, which is a product artefact; keeping it in Python put it
+where the person who owns that definition could not reach it.
+*Changes if:* the sheet stops being complete — a test fails the build when a
+check has no rubric.
+
 **D40 — The loop proposes; it never retunes itself.**
 Behaviour is read against each check's rubric — what a good and a bad finding
 look like for that specific check. Without those definitions a dismissal rate is
